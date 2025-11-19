@@ -1,0 +1,222 @@
+<!-- src/app/pages/board/board.html -->
+<div *ngIf="isLoading" class="loading-container">
+  <div class="spinner"></div>
+  <p>Cargando tablero...</p>
+</div>
+
+<div *ngIf="!isLoading && proyecto">
+  <div class="project-header">
+    <div class="project-title">
+      <span class="project-icon">📦</span>
+      <h2>{{ proyecto.nombre }}</h2>
+    </div>
+    <button class="btn btn-secondary" (click)="volverADashboard()">
+      ← Volver al Dashboard
+    </button>
+  </div>
+
+  <div class="board-container">
+    
+    <!-- Columna: Por hacer -->
+    <div 
+      class="board-column"
+      (dragover)="onDragOver($event)"
+      (drop)="onDrop($event, 'pendiente')">
+      <div class="column-header">
+        <h3>Por hacer</h3>
+        <span class="task-count">{{ columnas.pendiente.length }}</span>
+      </div>
+      <div class="column-content">
+        <div 
+          *ngFor="let tarea of columnas.pendiente"
+          class="task-card"
+          draggable="true"
+          (dragstart)="onDragStart($event, tarea)"
+          (click)="abrirDetalles(tarea)">
+          <h4>{{ tarea.titulo }}</h4>
+          <p *ngIf="tarea.descripcion">{{ tarea.descripcion }}</p>
+          <div class="card-footer">
+            <span class="task-date" *ngIf="tarea.fecha_limite">
+              📅 {{ tarea.fecha_limite | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <button class="btn-add-task" (click)="abrirModalCrear('pendiente')">
+        + Crear
+      </button>
+    </div>
+
+    <!-- Columna: En curso -->
+    <div 
+      class="board-column"
+      (dragover)="onDragOver($event)"
+      (drop)="onDrop($event, 'en_progreso')">
+      <div class="column-header">
+        <h3>En curso</h3>
+        <span class="task-count">{{ columnas.en_progreso.length }}</span>
+      </div>
+      <div class="column-content">
+        <div 
+          *ngFor="let tarea of columnas.en_progreso"
+          class="task-card"
+          draggable="true"
+          (dragstart)="onDragStart($event, tarea)"
+          (click)="abrirDetalles(tarea)">
+          <h4>{{ tarea.titulo }}</h4>
+          <p *ngIf="tarea.descripcion">{{ tarea.descripcion }}</p>
+          <div class="card-footer">
+            <span class="task-date" *ngIf="tarea.fecha_limite">
+              📅 {{ tarea.fecha_limite | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <button class="btn-add-task" (click)="abrirModalCrear('en_progreso')">
+        + Crear
+      </button>
+    </div>
+
+    <!-- Columna: Listo -->
+    <div 
+      class="board-column"
+      (dragover)="onDragOver($event)"
+      (drop)="onDrop($event, 'completada')">
+      <div class="column-header">
+        <h3>Listo</h3>
+        <span class="task-count">{{ columnas.completada.length }}</span>
+      </div>
+      <div class="column-content">
+        <div 
+          *ngFor="let tarea of columnas.completada"
+          class="task-card completed"
+          draggable="true"
+          (dragstart)="onDragStart($event, tarea)"
+          (click)="abrirDetalles(tarea)">
+          <h4>{{ tarea.titulo }}</h4>
+          <p *ngIf="tarea.descripcion">{{ tarea.descripcion }}</p>
+          <div class="card-footer">
+            <span class="task-date" *ngIf="tarea.fecha_limite">
+              📅 {{ tarea.fecha_limite | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <button class="btn-add-task" (click)="abrirModalCrear('completada')">
+        + Crear
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal: Crear Tarea -->
+<div class="modal-overlay" *ngIf="mostrarModal" (click)="cerrarModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Nueva Tarea</h3>
+      <button class="btn-close" (click)="cerrarModal()">✕</button>
+    </div>
+    <form (ngSubmit)="crearTarea()">
+      <div class="form-group">
+        <label for="titulo">Título *</label>
+        <input 
+          type="text" 
+          id="titulo" 
+          [(ngModel)]="nuevaTarea.titulo"
+          name="titulo"
+          required>
+      </div>
+      <div class="form-group">
+        <label for="descripcion">Descripción</label>
+        <textarea 
+          id="descripcion" 
+          [(ngModel)]="nuevaTarea.descripcion"
+          name="descripcion"
+          rows="4"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="estado">Estado</label>
+        <select id="estado" [(ngModel)]="nuevaTarea.estado" name="estado">
+          <option value="pendiente">Por hacer</option>
+          <option value="en_progreso">En curso</option>
+          <option value="completada">Listo</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="fecha">Fecha límite</label>
+        <input 
+          type="date" 
+          id="fecha" 
+          [(ngModel)]="nuevaTarea.fecha_limite"
+          name="fecha">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="cerrarModal()">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary">
+          Crear Tarea
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Detalles de Tarea -->
+<div class="modal-overlay" *ngIf="mostrarDetalles" (click)="cerrarDetalles()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Detalles de la Tarea</h3>
+      <button class="btn-close" (click)="cerrarDetalles()">✕</button>
+    </div>
+    <form (ngSubmit)="actualizarTarea()" *ngIf="tareaSeleccionada">
+      <div class="form-group">
+        <label for="edit-titulo">Título *</label>
+        <input 
+          type="text" 
+          id="edit-titulo" 
+          [(ngModel)]="tareaSeleccionada.titulo"
+          name="titulo"
+          required>
+      </div>
+      <div class="form-group">
+        <label for="edit-descripcion">Descripción</label>
+        <textarea 
+          id="edit-descripcion" 
+          [(ngModel)]="tareaSeleccionada.descripcion"
+          name="descripcion"
+          rows="4"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="edit-estado">Estado</label>
+        <select id="edit-estado" [(ngModel)]="tareaSeleccionada.estado" name="estado">
+          <option value="pendiente">Por hacer</option>
+          <option value="en_progreso">En curso</option>
+          <option value="completada">Listo</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="edit-fecha">Fecha límite</label>
+        <input 
+          type="date" 
+          id="edit-fecha" 
+          [(ngModel)]="tareaSeleccionada.fecha_limite"
+          name="fecha">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" (click)="eliminarTarea()">
+          Eliminar
+        </button>
+        <div class="actions-right">
+          <button type="button" class="btn btn-secondary" (click)="cerrarDetalles()">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary">
+            Guardar
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

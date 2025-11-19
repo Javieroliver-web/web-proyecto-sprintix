@@ -1,0 +1,370 @@
+/* src/app/pages/dashboard/dashboard.css */
+.loading-container, .error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f4f6;
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.project-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.project-icon {
+  font-size: 1.5rem;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-title h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0;
+  color: #1f2937;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn {
+  padding: 0.7rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-color-dark);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #4b5563;
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: #4a9ca6;
+  color: white;
+  padding: 1.25rem 1.75rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat-card span {
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.widgets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.widget {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.widget h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+}
+
+.widget > p {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Widget 1: Gráfico de dona */
+.donut-chart-container {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.chart-wrapper {
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+}
+
+.chart-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.legend-item label {
+  cursor: default;
+  color: #374151;
+}
+
+/* Widget 2: Actividad reciente */
+.activity-feed {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.feed-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.user-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.feed-text {
+  flex: 1;
+  font-size: 0.9rem;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.feed-text strong {
+  color: #1f2937;
+  font-weight: 600;
+  display: block;
+}
+
+.feed-time {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  display: block;
+  margin-top: 0.25rem;
+}
+
+/* Widget 3: Gráfico de barras */
+.bar-chart-placeholder {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 200px;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  padding: 0 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.bar {
+  width: 100%;
+  max-width: 80px;
+  background: linear-gradient(to top, #4a9ca6 0%, #67b5bf 100%);
+  border-radius: 6px 6px 0 0;
+  transition: all 0.3s;
+  min-height: 10px;
+}
+
+.bar-wrapper span {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+  padding-bottom: 0.5rem;
+}
+
+/* Widget 4: Lista de tareas */
+.task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  gap: 1rem;
+}
+
+.task-item.empty {
+  justify-content: center;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.task-info {
+  flex: 1;
+}
+
+.task-info h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+  color: #1f2937;
+}
+
+.task-info p {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.status-pendiente,
+.status-por.hacer {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-en_progreso,
+.status-en.curso {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-completada,
+.status-listo {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .widgets-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .project-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+  }
+
+  .donut-chart-container {
+    flex-direction: column;
+  }
+}

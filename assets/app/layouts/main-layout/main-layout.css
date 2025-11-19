@@ -1,0 +1,83 @@
+:host {
+    display: flex;
+    flex-direction: column; /* Apila la cabecera encima del 'app-body' */
+    height: 100vh;
+  }
+  
+  /* 1. Cabecera Superior */
+  .main-header {
+    height: var(--header-height, 65px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem; /* Mismo padding que la sidebar para alinear */
+    background: var(--bg-white, #fff);
+    border-bottom: 1px solid var(--border-color, #eee);
+    flex-shrink: 0; /* Evita que se encoja */
+  }
+  
+  .header-logo img {
+    height: 28px;
+  }
+  
+  .user-profile .user-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #007aff;
+    opacity: 0.8;
+    cursor: pointer;
+  }
+  
+  /* 2. Cuerpo de la App (Sidebar + Contenido) */
+  .app-body {
+    display: flex;
+    flex: 1; /* Ocupa el resto de la altura */
+    overflow: hidden; /* Evita scrollbars dobles */
+  }
+  
+  /* 3. Barra Lateral */
+  .sidebar {
+    width: var(--sidebar-width, 240px); /* Ancho de la barra lateral */
+    background: var(--bg-white, #fff);
+    border-right: 1px solid var(--border-color, #eee);
+    padding: 1.5rem; /* Padding interno */
+    flex-shrink: 0; /* Evita que se encoja */
+  }
+  
+  .nav-link.nav-link-home {
+    font-size: 1.5rem;
+    padding: 0.5rem 0; /* Ajusta el padding del icono de casa */
+    margin-bottom: 1rem;
+    text-align: left;
+  }
+  
+  .nav-link {
+    display: block;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-secondary, #555);
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  
+  .nav-link:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .nav-link.active {
+    font-weight: 700;
+    color: var(--text-primary, #111);
+    background-color: transparent;
+  }
+  
+  /* 4. Área de Contenido Principal */
+  .content-area {
+    flex: 1; /* Ocupa el espacio restante */
+    padding: 2rem;
+    overflow-y: auto; /* Permite scroll solo aquí */
+    background: linear-gradient(120deg, #e6f7ff 0%, #ebf2fa 100%);
+  }

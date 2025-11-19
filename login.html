@@ -1,0 +1,52 @@
+<div class="login-container">
+  <div class="login-box">
+    
+    <img src="/img/Logo2.png" alt="Sprintix" class="login-logo-main">
+    
+    <form (ngSubmit)="login()" #loginForm="ngForm">
+      <div class="form-group">
+        <label for="email">Correo electrónico</label>
+        <input 
+          type="email" 
+          id="email" 
+          name="email" 
+          [(ngModel)]="email"
+          required
+          [disabled]="isLoading">
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <input 
+          type="password" 
+          id="password" 
+          name="password" 
+          [(ngModel)]="password"
+          required
+          [disabled]="isLoading">
+      </div>
+      
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+      
+      <button 
+        type="submit" 
+        class="btn-login"
+        [disabled]="isLoading">
+        <span *ngIf="!isLoading">Iniciar sesión</span>
+        <span *ngIf="isLoading">Iniciando sesión...</span>
+      </button>
+    </form>
+    
+    <img src="/img/Logo2.png" alt="Sprintix" class="login-logo-footer">
+  </div>
+  
+  
+  <div class="deco-icon-left">
+    <img src="/img/icon8.png" alt="Clipboard icon">
+  </div>
+  <div class="deco-icon-right">
+    <img src="/img/icon9.png" alt="Clipboard icon2">
+  </div>
+</div>
