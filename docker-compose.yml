@@ -12,8 +12,8 @@ services:
       # Importante: Desde el navegador, la API está en localhost:8080
       - API_URL_PUBLIC=http://localhost:8080/api
     networks:
-      - sprintix-network
+      - api-proyecto_sprintix-network
 
 networks:
-  sprintix-network:
+  api-proyecto_sprintix-network:
     external: true
