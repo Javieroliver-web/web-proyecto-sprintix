@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: sprintix-web-java
+    restart: unless-stopped
+    ports:
+      - "4000:8081"
+    environment:
+      # URL pública de la API (para que el JS del navegador sepa a dónde ir)
+      # Importante: Desde el navegador, la API está en localhost:8080
+      - API_URL_PUBLIC=http://localhost:8080/api
+    networks:
+      - sprintix-network
+
+networks:
+  sprintix-network:
+    external: true
