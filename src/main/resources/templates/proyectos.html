@@ -33,7 +33,7 @@
             </header>
             
             <div class="content-area">
-                <div class="page-header">
+                <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                     <h2>Mis Proyectos</h2>
                     <button class="btn btn-primary" onclick="openProjectModal()">+ Crear Proyecto</button>
                 </div>
@@ -50,14 +50,16 @@
                     </div>
                     
                     <div th:if="${#lists.isEmpty(proyectos)}" class="empty-state" 
-                         style="grid-column: 1/-1; text-align:center; color:#666;">
-                        No hay proyectos. ¡Crea el primero!
+                         style="grid-column: 1/-1; text-align:center; color:#666; padding: 3rem;">
+                        <p style="font-size: 1.2rem; margin-bottom: 1rem;">📂 No hay proyectos</p>
+                        <p>¡Crea tu primer proyecto para comenzar!</p>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- Modal Crear Proyecto -->
     <div id="createProjectModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -66,16 +68,18 @@
             </div>
             <form id="createProjectForm" style="padding-top: 10px;">
                 <div class="form-group">
-                    <label for="p-nombre">Nombre del Proyecto</label>
-                    <input type="text" id="p-nombre" class="form-control" required placeholder="Ej: Rediseño Web">
+                    <label for="p-nombre">Nombre del Proyecto *</label>
+                    <input type="text" id="p-nombre" class="form-control" required 
+                           placeholder="Ej: Rediseño Web" maxlength="100">
                 </div>
                 <div class="form-group">
                     <label for="p-desc">Descripción</label>
-                    <textarea id="p-desc" class="form-control" rows="3"></textarea>
+                    <textarea id="p-desc" class="form-control" rows="3" 
+                              placeholder="Describe brevemente el proyecto..." maxlength="500"></textarea>
                 </div>
                 <div class="row-grid">
                     <div class="form-group">
-                        <label for="p-inicio">Fecha de Inicio</label>
+                        <label for="p-inicio">Fecha de Inicio *</label>
                         <input type="date" id="p-inicio" class="form-control" required>
                     </div>
                     <div class="form-group">
@@ -85,29 +89,33 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeProjectModal()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Crear Proyecto</button>
+                    <button type="submit" class="btn btn-primary" id="btnCrearProyecto">Crear Proyecto</button>
                 </div>
             </form>
         </div>
     </div>
     
+    <!-- Variables del servidor -->
     <script th:inline="javascript">
-        const JWT_TOKEN = /*[[${session.token}]]*/ 'null';
+        const JWT_TOKEN = /*[[${session.token}]]*/ '';
+        const API_BASE_URL = 'http://localhost:8080/api';
         
-        // Sobrescribimos la función de fetch para usar este token
-        // en lugar de localStorage
         async function authFetch(endpoint, options = {}) {
             const headers = {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${JWT_TOKEN}`,
                 ...options.headers
             };
-            // Nota: Usamos la URL pública de la API
-            return fetch(`http://localhost:8080/api${endpoint}`, { ...options, headers });
+            
+            console.log('🔐 Petición a:', API_BASE_URL + endpoint);
+            
+            return fetch(API_BASE_URL + endpoint, {
+                ...options,
+                headers
+            });
         }
     </script>
     
-    <script src="js/layout.js"></script>
-    <script src="js/proyectos.js"></script>
+    <script src="/js/proyectos.js"></script>
 </body>
 </html>

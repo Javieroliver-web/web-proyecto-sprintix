@@ -29,52 +29,61 @@
             </header>
             
             <div class="content-area">
-                <div class="page-header">
+                <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <button class="btn btn-secondary" onclick="location.href='/proyectos'">←</button>
+                        <button class="btn btn-secondary" onclick="location.href='/proyectos'">← Volver</button>
                         <h2 th:text="${proyecto.nombre}">Nombre Proyecto</h2>
                     </div>
                 </div>
 
                 <div class="board-container">
+                    <!-- Columna: Por hacer -->
                     <div class="board-column" ondrop="dropTask(event, 'pendiente')" ondragover="allowDrop(event)">
                         <div class="column-header">
-                            <span>Por hacer</span> 
-                            <button class="btn-icon-add" onclick="openTaskModal('pendiente')">+</button>
+                            <span>📋 Por hacer</span> 
+                            <button class="btn-icon-add" onclick="openTaskModal('pendiente')" title="Añadir tarea">+</button>
                         </div>
                         <div class="column-content" id="col-pendiente">
                             <div th:each="t : ${tareasPendientes}" class="task-card" draggable="true" 
                                  th:id="'task-' + ${t.id}" th:attr="data-id=${t.id}" ondragstart="drag(event)">
                                 <h4 th:text="${t.titulo}">Título</h4>
                                 <p th:text="${t.descripcion}">Desc</p>
+                                <small th:if="${t.fecha_limite}" 
+                                       th:text="'📅 ' + ${#dates.format(t.fecha_limite, 'dd/MM/yyyy')}">Fecha</small>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Columna: En curso -->
                     <div class="board-column" ondrop="dropTask(event, 'en_progreso')" ondragover="allowDrop(event)">
                         <div class="column-header">
-                            <span>En curso</span> 
-                            <button class="btn-icon-add" onclick="openTaskModal('en_progreso')">+</button>
+                            <span>⚙️ En curso</span> 
+                            <button class="btn-icon-add" onclick="openTaskModal('en_progreso')" title="Añadir tarea">+</button>
                         </div>
                         <div class="column-content" id="col-en_progreso">
                             <div th:each="t : ${tareasEnCurso}" class="task-card" draggable="true" 
                                  th:id="'task-' + ${t.id}" th:attr="data-id=${t.id}" ondragstart="drag(event)">
                                 <h4 th:text="${t.titulo}">Título</h4>
                                 <p th:text="${t.descripcion}">Desc</p>
+                                <small th:if="${t.fecha_limite}" 
+                                       th:text="'📅 ' + ${#dates.format(t.fecha_limite, 'dd/MM/yyyy')}">Fecha</small>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Columna: Listo -->
                     <div class="board-column" ondrop="dropTask(event, 'completada')" ondragover="allowDrop(event)">
                         <div class="column-header">
-                            <span>Listo</span> 
-                            <button class="btn-icon-add" onclick="openTaskModal('completada')">+</button>
+                            <span>✅ Listo</span> 
+                            <button class="btn-icon-add" onclick="openTaskModal('completada')" title="Añadir tarea">+</button>
                         </div>
                         <div class="column-content" id="col-completada">
                             <div th:each="t : ${tareasCompletadas}" class="task-card completed" draggable="true" 
                                  th:id="'task-' + ${t.id}" th:attr="data-id=${t.id}" ondragstart="drag(event)">
                                 <h4 th:text="${t.titulo}">Título</h4>
                                 <p th:text="${t.descripcion}">Desc</p>
+                                <small th:if="${t.fecha_limite}" 
+                                       th:text="'📅 ' + ${#dates.format(t.fecha_limite, 'dd/MM/yyyy')}">Fecha</small>
                             </div>
                         </div>
                     </div>
@@ -83,6 +92,7 @@
         </main>
     </div>
     
+    <!-- Modal Crear Tarea -->
     <div id="createTaskModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -92,43 +102,43 @@
             <form id="createTaskForm" style="padding-top: 10px;">
                 <input type="hidden" id="t-estado">
                 <div class="form-group">
-                    <label for="t-titulo">Título de la tarea</label>
-                    <input type="text" id="t-titulo" class="form-control" required>
+                    <label for="t-titulo">Título de la tarea *</label>
+                    <input type="text" id="t-titulo" class="form-control" required 
+                           placeholder="Ej: Diseñar mockup" maxlength="100">
                 </div>
                 <div class="form-group">
                     <label for="t-desc">Detalles</label>
-                    <textarea id="t-desc" class="form-control" rows="3"></textarea>
+                    <textarea id="t-desc" class="form-control" rows="3" 
+                              placeholder="Describe la tarea..." maxlength="500"></textarea>
                 </div>
-                <div class="row-grid">
-                    <div class="form-group">
-                        <label for="t-fecha">Fecha Límite</label>
-                        <input type="date" id="t-fecha" class="form-control">
-                    </div>
+                <div class="form-group">
+                    <label for="t-fecha">Fecha Límite</label>
+                    <input type="date" id="t-fecha" class="form-control">
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Añadir Tarea</button>
+                    <button type="submit" class="btn btn-primary" id="btnCrearTarea">Añadir Tarea</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Variables del servidor -->
     <script th:inline="javascript">
         const projectId = /*[[${proyecto.id}]]*/ 0;
         const JWT_TOKEN = /*[[${session.token}]]*/ '';
+        const API_BASE_URL = 'http://localhost:8080/api';
         
-        // Helper fetch con token de sesión
         async function authFetch(endpoint, options = {}) {
             const headers = {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${JWT_TOKEN}`,
                 ...options.headers
             };
-            return fetch(`http://localhost:8080/api${endpoint}`, { ...options, headers });
+            return fetch(API_BASE_URL + endpoint, { ...options, headers });
         }
     </script>
     
-    <script src="js/layout.js"></script>
-    <script src="js/board.js"></script>
+    <script src="/js/board.js"></script>
 </body>
 </html>

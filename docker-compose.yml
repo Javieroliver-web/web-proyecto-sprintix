@@ -8,11 +8,22 @@ services:
     ports:
       - "4000:8081"
     environment:
-      # URL pública de la API (para que el JS del navegador sepa a dónde ir)
-      # Importante: Desde el navegador, la API está en localhost:8080
+      # Para peticiones SERVIDOR -> API (dentro de Docker)
+      # Usa el nombre del contenedor de la API
+      - API_URL_BACKEND=http://sprintix-api:8080/api
+      
+      # Para peticiones NAVEGADOR -> API (fuera de Docker)
+      # El navegador no puede acceder a "sprintix-api", debe usar localhost
       - API_URL_PUBLIC=http://localhost:8080/api
     networks:
       - api-proyecto_sprintix-network
+    # Opcional: healthcheck para verificar que el servicio está listo
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/config"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 networks:
   api-proyecto_sprintix-network:

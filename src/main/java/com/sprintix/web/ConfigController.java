@@ -8,10 +8,13 @@ import java.util.Map;
 @RestController
 public class ConfigController {
 
-    // Inyecta la URL desde Docker o usa localhost por defecto
-    @Value("${API_URL_PUBLIC:http://localhost:8080/api}")
+    @Value("${api.public.url}")
     private String apiUrl;
 
+    /**
+     * Endpoint para que el JavaScript del navegador obtenga la URL de la API
+     * Llamar desde JS: fetch('/config').then(r => r.json())
+     */
     @GetMapping("/config")
     public Map<String, String> getConfig() {
         return Map.of("apiUrl", apiUrl);
