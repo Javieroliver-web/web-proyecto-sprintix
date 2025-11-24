@@ -2,7 +2,10 @@ const urlParams = new URLSearchParams(window.location.search);
 const projectId = urlParams.get('id');
 
 document.addEventListener('DOMContentLoaded', () => {
-    if(!projectId) return window.location.href = '/proyectos.html';
+    if(!projectId) {
+        window.location.href = '/proyectos.html';
+        return;
+    }
     loadBoard();
 });
 
@@ -14,8 +17,9 @@ async function loadBoard() {
         document.getElementById('boardTitle').innerText = proj.nombre;
     }
 
-    // 2. Tareas
-    const resT = await authFetch(`/tareas?proyecto_id=${projectId}`);
+    // 2. Tareas del Proyecto
+    // Endpoint: GET /api/tareas/proyecto/{id}
+    const resT = await authFetch(`/tareas/proyecto/${projectId}`);
     if (resT.ok) {
         renderTasks(await resT.json());
     }
@@ -23,52 +27,86 @@ async function loadBoard() {
 
 function renderTasks(tareas) {
     ['pendiente', 'en_progreso', 'completada'].forEach(estado => {
-        document.getElementById(`col-${estado}`).innerHTML = '';
+        const col = document.getElementById(`col-${estado}`);
+        if(col) col.innerHTML = '';
     });
 
     tareas.forEach(t => {
-        let estadoKey = t.estado.toLowerCase();
-        if(estadoKey === 'por hacer') estadoKey = 'pendiente';
-        if(estadoKey === 'en curso') estadoKey = 'en_progreso';
-        if(estadoKey === 'listo') estadoKey = 'completada';
-
+        let estadoKey = normalizeStatus(t.estado);
         const col = document.getElementById(`col-${estadoKey}`);
+        
         if (col) {
             const card = document.createElement('div');
             card.className = `task-card ${estadoKey === 'completada' ? 'completed' : ''}`;
             card.draggable = true;
             card.id = `task-${t.id}`;
-            // Se puede añadir un onclick aquí para editar tarea en el futuro
-            card.innerHTML = `<h4>${t.titulo}</h4><p>${t.descripcion || ''}</p>`;
+            card.dataset.id = t.id; // Guardamos ID real en dataset
             
+            card.innerHTML = `
+                <h4>${t.titulo}</h4>
+                <p>${t.descripcion || ''}</p>
+            `;
+            
+            // Eventos Drag
             card.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('text/plain', t.id);
                 e.dataTransfer.effectAllowed = 'move';
+                card.classList.add('dragging');
             });
+            
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+            });
+
             col.appendChild(card);
         }
     });
 }
 
-// --- Drag & Drop ---
-window.allowDrop = (e) => e.preventDefault();
+function normalizeStatus(status) {
+    if(!status) return 'pendiente';
+    const s = status.toLowerCase();
+    if (s === 'por hacer' || s === 'todo') return 'pendiente';
+    if (s === 'en curso' || s === 'in_progress') return 'en_progreso';
+    if (s === 'listo' || s === 'done') return 'completada';
+    return s;
+}
+
+// --- Drag & Drop Logic ---
+window.allowDrop = (e) => {
+    e.preventDefault();
+}
 
 window.dropTask = async (e, nuevoEstado) => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('text/plain');
     const card = document.getElementById(`task-${taskId}`);
     
-    // UI Optimista
-    document.getElementById(`col-${nuevoEstado}`).appendChild(card);
+    if(!card) return;
 
-    // Backend Update
-    await authFetch(`/tareas/${taskId}`, {
+    // UI Optimista: Mover la tarjeta inmediatamente
+    const targetCol = document.getElementById(`col-${nuevoEstado}`);
+    targetCol.appendChild(card);
+
+    // Llamada API para persistir cambio
+    const res = await authFetch(`/tareas/${taskId}`, {
         method: 'PUT',
-        body: JSON.stringify({ estado: nuevoEstado })
+        body: JSON.stringify({ 
+            estado: nuevoEstado 
+            // Nota: Al ser PUT, el backend podría requerir el resto de campos.
+            // Si falla, cambiaremos a PATCH o enviaremos el objeto completo.
+            // Tu TareaController hace: tarea.setEstado(...) y guarda.
+            // Como recupera la tarea de DB primero (obtenerPorId), esto funcionará bien.
+        })
     });
+
+    if (!res.ok) {
+        alert("Error al mover la tarea. Recargando...");
+        loadBoard();
+    }
 };
 
-// --- Gestión Modal Tarea ---
+// --- Modales Tarea ---
 const modal = document.getElementById('createTaskModal');
 const form = document.getElementById('createTaskForm');
 
@@ -89,11 +127,15 @@ form.addEventListener('submit', async (e) => {
     const desc = document.getElementById('t-desc').value;
     const estado = document.getElementById('t-estado').value;
 
+    // Estructura para JPA: enviamos el proyecto como objeto anidado
     const newTask = {
         titulo: titulo,
         descripcion: desc,
         estado: estado,
-        proyecto_id: projectId
+        fecha_limite: new Date(),
+        proyecto: {
+            id: projectId
+        }
     };
 
     const res = await authFetch('/tareas', {
@@ -103,7 +145,7 @@ form.addEventListener('submit', async (e) => {
 
     if (res && res.ok) {
         closeTaskModal();
-        loadBoard(); // Recargar el tablero
+        loadBoard();
     } else {
         alert('Error al crear tarea');
     }

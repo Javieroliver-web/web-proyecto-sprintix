@@ -1,9 +1,12 @@
-// Variable global para la API
+// Variable global
 let API_URL = 'http://localhost:8080/api';
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadConfig();
-    setupLoginListener();
+    
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) setupLoginListener(loginForm);
+    
     checkAuth();
 });
 
@@ -14,41 +17,35 @@ async function loadConfig() {
             const config = await response.json();
             if (config.apiUrl) API_URL = config.apiUrl;
         }
-    } catch (e) { console.warn('Usando API localhost por defecto'); }
+    } catch (e) { console.log('Usando config local'); }
 }
 
-// --- Nueva función central para peticiones autenticadas ---
 async function authFetch(endpoint, options = {}) {
     const token = localStorage.getItem('token');
-    if (!options.headers) options.headers = {};
-    
-    if (token) options.headers['Authorization'] = `Bearer ${token}`;
-    if (!options.headers['Content-Type'] && !(options.body instanceof FormData)) {
-        options.headers['Content-Type'] = 'application/json';
-    }
-
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        ...options.headers
+    };
     try {
-        const response = await fetch(`${API_URL}${endpoint}`, options);
-        if (response.status === 401) {
-            logout(); // Token expirado
-            return null;
-        }
+        const response = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+        if (response.status === 401) { logout(); return null; }
         return response;
-    } catch (error) {
-        console.error("Error de red:", error);
-        return null;
-    }
+    } catch (error) { return null; }
 }
 
-function setupLoginListener() {
-    const loginForm = document.getElementById('loginForm');
-    if (!loginForm) return;
-
-    loginForm.addEventListener('submit', async (e) => {
+function setupLoginListener(form) {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        // Elementos
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const errorMsg = document.getElementById('errorMsg');
+        
+        // Resetear estado UI
+        errorMsg.style.display = 'none';
+        errorMsg.innerText = '';
 
         try {
             const res = await fetch(`${API_URL}/auth/login`, {
@@ -56,6 +53,7 @@ function setupLoginListener() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
+
             const data = await res.json();
 
             if (res.ok && data.success) {
@@ -63,24 +61,23 @@ function setupLoginListener() {
                 localStorage.setItem('user', JSON.stringify(data.usuario));
                 window.location.href = '/dashboard.html';
             } else {
-                throw new Error(data.message || 'Error de login');
+                // ERROR DE CREDENCIALES
+                throw new Error('Credenciales incorrectas');
             }
         } catch (error) {
-            if(errorMsg) {
-                errorMsg.textContent = error.message;
-                errorMsg.style.display = 'block';
-            }
+            // MOSTRAR ERROR VISUALMENTE
+            errorMsg.innerText = "⚠️ " + error.message;
+            errorMsg.style.display = 'block';
         }
     });
 }
 
 function checkAuth() {
     const path = window.location.pathname;
-    const isPublic = path === '/' || path.endsWith('index.html') || path.endsWith('login.html');
+    const isLogin = path === '/' || path.endsWith('index.html');
     const token = localStorage.getItem('token');
-
-    if (!isPublic && !token) window.location.href = '/index.html';
-    if (isPublic && token) window.location.href = '/dashboard.html';
+    if (!isLogin && !token) window.location.href = '/index.html';
+    if (isLogin && token) window.location.href = '/dashboard.html';
 }
 
 function logout() {

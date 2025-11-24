@@ -10,17 +10,18 @@ async function loadProjects() {
         container.innerHTML = '';
         
         if (proyectos.length === 0) {
-            container.innerHTML = '<div class="empty-state">No hay proyectos. ¡Crea el primero!</div>';
+            container.innerHTML = '<div class="empty-state" style="text-align:center; width:100%; color:#666;">No hay proyectos. ¡Crea el primero!</div>';
             return;
         }
 
         proyectos.forEach(p => {
             const html = `
             <div class="project-card" onclick="window.location.href='/board.html?id=${p.id}'">
-                <div class="card-icon">${p.icono || '📦'}</div>
                 <h3>${p.nombre}</h3>
-                <p style="color: #666; font-size: 0.9rem; margin: 10px 0;">${p.descripcion || 'Sin descripción'}</p>
-                <span class="project-status status-${(p.estado || 'activo').toLowerCase()}">${p.estado || 'Activo'}</span>
+                <p style="color: #e0f7fa; font-size: 0.9rem; margin: 10px 0;">${p.descripcion || 'Sin descripción'}</p>
+                <div style="margin-top: auto; font-size: 0.8rem;">
+                    Estado: <strong>${p.estado || 'Activo'}</strong>
+                </div>
             </div>`;
             container.innerHTML += html;
         });
@@ -33,21 +34,18 @@ async function loadProjects() {
 const modal = document.getElementById('createProjectModal');
 const form = document.getElementById('createProjectForm');
 
-function openProjectModal() {
+window.openProjectModal = function() {
     modal.classList.add('show');
     document.getElementById('p-nombre').focus();
 }
 
-function closeProjectModal() {
+window.closeProjectModal = function() {
     modal.classList.remove('show');
     form.reset();
 }
 
-// Cerrar si se hace clic fuera del modal
 window.onclick = function(event) {
-    if (event.target == modal) {
-        closeProjectModal();
-    }
+    if (event.target == modal) closeProjectModal();
 }
 
 // --- Crear Proyecto (API) ---
@@ -57,14 +55,13 @@ form.addEventListener('submit', async (e) => {
     const nombre = document.getElementById('p-nombre').value;
     const descripcion = document.getElementById('p-desc').value;
     
-    // Asumimos que el backend asigna el ID y usuario automáticamente o tomamos el ID del usuario logueado
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-
+    // Objeto Proyecto tal como lo espera tu Entity Proyecto.java
+    // El usuario creador lo saca el backend del Token JWT
     const newProject = {
         nombre: nombre,
         descripcion: descripcion,
-        estado: 'Activo',
-        usuario_id: user.id || 1 // Fallback si no hay usuario
+        fecha_inicio: new Date(), 
+        estado: 'Activo'
     };
 
     try {
@@ -77,7 +74,8 @@ form.addEventListener('submit', async (e) => {
             closeProjectModal();
             loadProjects(); // Recargar la lista
         } else {
-            alert('Error al crear el proyecto');
+            const errorData = await res.json(); // Intentar leer error del backend
+            alert('Error: ' + (errorData.message || 'No se pudo crear el proyecto'));
         }
     } catch (error) {
         console.error(error);
