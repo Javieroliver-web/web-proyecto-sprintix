@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Tablero - Sprintix</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-layout">
+        <div id="sidebar-container"></div>
+        <main class="main-content">
+            <div id="header-container"></div>
+            
+            <div class="content-area">
+                <div class="page-header">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button class="btn btn-secondary" onclick="location.href='/proyectos.html'">←</button>
+                        <h2 id="boardTitle">Cargando...</h2>
+                    </div>
+                </div>
+
+                <div class="board-container">
+                    <div class="board-column" ondrop="dropTask(event, 'pendiente')" ondragover="allowDrop(event)">
+                        <div class="column-header">
+                            <span>Por hacer</span> 
+                            <button class="btn-icon-add" onclick="openTaskModal('pendiente')">+</button>
+                        </div>
+                        <div class="column-content" id="col-pendiente"></div>
+                    </div>
+
+                    <div class="board-column" ondrop="dropTask(event, 'en_progreso')" ondragover="allowDrop(event)">
+                        <div class="column-header">
+                            <span>En curso</span> 
+                            <button class="btn-icon-add" onclick="openTaskModal('en_progreso')">+</button>
+                        </div>
+                        <div class="column-content" id="col-en_progreso"></div>
+                    </div>
+
+                    <div class="board-column" ondrop="dropTask(event, 'completada')" ondragover="allowDrop(event)">
+                        <div class="column-header">
+                            <span>Listo</span> 
+                            <button class="btn-icon-add" onclick="openTaskModal('completada')">+</button>
+                        </div>
+                        <div class="column-content" id="col-completada"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="createTaskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✨ Nueva Tarea</h3>
+                <button class="close-btn" onclick="closeTaskModal()">&times;</button>
+            </div>
+            <form id="createTaskForm" style="padding-top: 10px;">
+                <input type="hidden" id="t-estado">
+                
+                <div class="form-group">
+                    <label for="t-titulo">Título de la tarea</label>
+                    <input type="text" id="t-titulo" class="form-control" required placeholder="Ej: Diseñar base de datos">
+                </div>
+                
+                <div class="form-group">
+                    <label for="t-desc">Detalles</label>
+                    <textarea id="t-desc" class="form-control" rows="3" placeholder="Describe los requerimientos..."></textarea>
+                </div>
+
+                <div class="row-grid">
+                    <div class="form-group">
+                        <label for="t-fecha">Fecha Límite</label>
+                        <input type="date" id="t-fecha" class="form-control">
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Añadir Tarea</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/board.js"></script>
+</body>
+</html>

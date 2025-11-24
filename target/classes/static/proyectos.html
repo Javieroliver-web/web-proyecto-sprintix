@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Proyectos - Sprintix</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-layout">
+        <div id="sidebar-container"></div>
+        <main class="main-content">
+            <div id="header-container"></div>
+            
+            <div class="content-area">
+                <div class="page-header">
+                    <h2>Mis Proyectos</h2>
+                    <button class="btn btn-primary" onclick="openProjectModal()">+ Crear Proyecto</button>
+                </div>
+                <div id="projectsContainer" class="projects-grid">
+                    <p>Cargando...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="createProjectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📂 Nuevo Proyecto</h3>
+                <button class="close-btn" onclick="closeProjectModal()">&times;</button>
+            </div>
+            <form id="createProjectForm" style="padding-top: 10px;">
+                
+                <div class="form-group">
+                    <label for="p-nombre">Nombre del Proyecto</label>
+                    <input type="text" id="p-nombre" class="form-control" required placeholder="Ej: Rediseño Web Corporativa">
+                </div>
+                
+                <div class="form-group">
+                    <label for="p-desc">Descripción</label>
+                    <textarea id="p-desc" class="form-control" rows="3" placeholder="¿Cuál es el objetivo de este proyecto?"></textarea>
+                </div>
+
+                <div class="row-grid">
+                    <div class="form-group">
+                        <label for="p-inicio">Fecha de Inicio</label>
+                        <input type="date" id="p-inicio" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="p-fin">Fecha Estimada Fin</label>
+                        <input type="date" id="p-fin" class="form-control">
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeProjectModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Proyecto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/proyectos.js"></script>
+</body>
+</html>

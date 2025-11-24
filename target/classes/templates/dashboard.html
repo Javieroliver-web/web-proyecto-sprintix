@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Sprintix</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="/img/Logo2.png" style="height:40px">
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="/dashboard" class="nav-link active"><img src="/img/homeicon.png" style="height:40px"></a></li>
+                    <li><a href="/proyectos" class="nav-link">Proyectos</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="/logout"><img src="/img/exiticon.png" style="height:40px"></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <div class="search-bar"></div>
+                <div class="header-actions">
+                    <div class="user-profile">
+                        <div class="user-avatar" th:text="${#strings.substring(usuario.nombre,0,1).toUpperCase()}">U</div>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="content-area">
+                <h2 class="section-title">Resumen</h2>
+                <div class="stats-row" style="display: flex; gap: 20px; margin-bottom: 2rem;">
+                    <div class="stat-box" style="background: white; padding: 15px; border-radius: 8px; flex: 1; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                        <h3 style="margin:0; font-size: 2rem; color: var(--primary-color);" 
+                            th:text="${stats.tareasPendientes}">0</h3>
+                        <span style="color: #666;">Tareas Pendientes</span>
+                    </div>
+                    <div class="stat-box" style="background: white; padding: 15px; border-radius: 8px; flex: 1; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                        <h3 style="margin:0; font-size: 2rem; color: var(--primary-color);" 
+                            th:text="${stats.proyectosActivos}">0</h3>
+                        <span style="color: #666;">Proyectos Activos</span>
+                    </div>
+                </div>
+
+                <h2 class="section-title">Proyectos recientes</h2>
+                <div class="rec-grid">
+                    <div class="rec-card" th:each="p : ${stats.ultimosProyectos}" 
+                         th:onclick="'window.location.href=\'/board?id=' + ${p.id} + '\''">
+                        <h3 th:text="${p.nombre}">Nombre Proyecto</h3>
+                        <span style="font-size: 0.8rem; opacity: 0.8;" 
+                              th:text="${#dates.format(p.fecha_inicio, 'dd/MM/yyyy')}">Fecha</span>
+                    </div>
+                    <p th:if="${#lists.isEmpty(stats.ultimosProyectos)}" style="color:#777;">No hay proyectos recientes</p>
+                </div>
+
+                <div class="tabs-header">
+                    <button class="tab-link active">Próximas Tareas</button>
+                </div>
+                
+                <div class="task-list">
+                    <div class="task-row" th:each="t : ${stats.tareasProximas}">
+                        <input type="checkbox" class="task-check" disabled>
+                        <span class="task-title" th:text="${t.titulo}">Tarea</span>
+                        <div class="task-meta">
+                            <span class="badge" th:text="${t.estado}">Estado</span>
+                        </div>
+                    </div>
+                    <p th:if="${#lists.isEmpty(stats.tareasProximas)}" style="color:#777;">¡Estás al día!</p>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
