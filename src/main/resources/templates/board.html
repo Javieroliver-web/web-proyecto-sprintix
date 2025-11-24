@@ -1,21 +1,38 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Tablero - Sprintix</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <title th:text="${proyecto.nombre} + ' - Tablero'">Tablero</title>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
     <div class="app-layout">
-        <div id="sidebar-container"></div>
+        <aside class="sidebar">
+            <div class="sidebar-header"><img src="/img/Logo2.png" style="height:40px"></div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="/dashboard" class="nav-link"><img src="/img/homeicon.png" style="height:40px"></a></li>
+                    <li><a href="/proyectos" class="nav-link active">Proyectos</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer"><a href="/logout"><img src="/img/exiticon.png" style="height:40px"></a></div>
+        </aside>
+
         <main class="main-content">
-            <div id="header-container"></div>
+            <header class="header">
+                <div class="search-bar"></div>
+                <div class="header-actions">
+                    <div class="user-profile">
+                        <div class="user-avatar" th:text="${#strings.substring(usuario.nombre,0,1).toUpperCase()}">U</div>
+                    </div>
+                </div>
+            </header>
             
             <div class="content-area">
                 <div class="page-header">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <button class="btn btn-secondary" onclick="location.href='/proyectos.html'">←</button>
-                        <h2 id="boardTitle">Cargando...</h2>
+                        <button class="btn btn-secondary" onclick="location.href='/proyectos'">←</button>
+                        <h2 th:text="${proyecto.nombre}">Nombre Proyecto</h2>
                     </div>
                 </div>
 
@@ -25,7 +42,13 @@
                             <span>Por hacer</span> 
                             <button class="btn-icon-add" onclick="openTaskModal('pendiente')">+</button>
                         </div>
-                        <div class="column-content" id="col-pendiente"></div>
+                        <div class="column-content" id="col-pendiente">
+                            <div th:each="t : ${tareasPendientes}" class="task-card" draggable="true" 
+                                 th:id="'task-' + ${t.id}" th:attr="data-id=${t.id}" ondragstart="drag(event)">
+                                <h4 th:text="${t.titulo}">Título</h4>
+                                <p th:text="${t.descripcion}">Desc</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="board-column" ondrop="dropTask(event, 'en_progreso')" ondragover="allowDrop(event)">
@@ -33,7 +56,13 @@
                             <span>En curso</span> 
                             <button class="btn-icon-add" onclick="openTaskModal('en_progreso')">+</button>
                         </div>
-                        <div class="column-content" id="col-en_progreso"></div>
+                        <div class="column-content" id="col-en_progreso">
+                            <div th:each="t : ${tareasEnCurso}" class="task-card" draggable="true" 
+                                 th:id="'task-' + ${t.id}" th:attr="data-id=${t.id}" ondragstart="drag(event)">
+                                <h4 th:text="${t.titulo}">Título</h4>
+                                <p th:text="${t.descripcion}">Desc</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="board-column" ondrop="dropTask(event, 'completada')" ondragover="allowDrop(event)">
@@ -41,13 +70,19 @@
                             <span>Listo</span> 
                             <button class="btn-icon-add" onclick="openTaskModal('completada')">+</button>
                         </div>
-                        <div class="column-content" id="col-completada"></div>
+                        <div class="column-content" id="col-completada">
+                            <div th:each="t : ${tareasCompletadas}" class="task-card completed" draggable="true" 
+                                 th:id="'task-' + ${t.id}" th:attr="data-id=${t.id}" ondragstart="drag(event)">
+                                <h4 th:text="${t.titulo}">Título</h4>
+                                <p th:text="${t.descripcion}">Desc</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
-
+    
     <div id="createTaskModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -56,24 +91,20 @@
             </div>
             <form id="createTaskForm" style="padding-top: 10px;">
                 <input type="hidden" id="t-estado">
-                
                 <div class="form-group">
                     <label for="t-titulo">Título de la tarea</label>
-                    <input type="text" id="t-titulo" class="form-control" required placeholder="Ej: Diseñar base de datos">
+                    <input type="text" id="t-titulo" class="form-control" required>
                 </div>
-                
                 <div class="form-group">
                     <label for="t-desc">Detalles</label>
-                    <textarea id="t-desc" class="form-control" rows="3" placeholder="Describe los requerimientos..."></textarea>
+                    <textarea id="t-desc" class="form-control" rows="3"></textarea>
                 </div>
-
                 <div class="row-grid">
                     <div class="form-group">
                         <label for="t-fecha">Fecha Límite</label>
                         <input type="date" id="t-fecha" class="form-control">
                     </div>
                 </div>
-
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Añadir Tarea</button>
@@ -82,7 +113,21 @@
         </div>
     </div>
 
-    <script src="js/auth.js"></script>
+    <script th:inline="javascript">
+        const projectId = /*[[${proyecto.id}]]*/ 0;
+        const JWT_TOKEN = /*[[${session.token}]]*/ '';
+        
+        // Helper fetch con token de sesión
+        async function authFetch(endpoint, options = {}) {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${JWT_TOKEN}`,
+                ...options.headers
+            };
+            return fetch(`http://localhost:8080/api${endpoint}`, { ...options, headers });
+        }
+    </script>
+    
     <script src="js/layout.js"></script>
     <script src="js/board.js"></script>
 </body>

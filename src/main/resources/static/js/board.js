@@ -1,101 +1,14 @@
-const urlParams = new URLSearchParams(window.location.search);
-const projectId = urlParams.get('id');
+// js/board.js
 
-document.addEventListener('DOMContentLoaded', () => {
-    if(!projectId) {
-        window.location.href = '/proyectos.html';
-        return;
-    }
-    loadBoard();
-});
+// ELIMINAMOS loadBoard() y los listeners de DOMContentLoaded
+// Solo dejamos las funciones de interacción
 
-async function loadBoard() {
-    // 1. Info Proyecto
-    const resP = await authFetch(`/proyectos/${projectId}`);
-    if (resP.ok) {
-        const proj = await resP.json();
-        document.getElementById('boardTitle').innerText = proj.nombre;
-    }
-
-    // 2. Tareas del Proyecto
-    const resT = await authFetch(`/tareas/proyecto/${projectId}`);
-    if (resT.ok) {
-        renderTasks(await resT.json());
-    }
+// --- Drag & Drop ---
+function drag(ev) {
+    ev.dataTransfer.setData("text/plain", ev.target.dataset.id);
+    ev.dataTransfer.effectAllowed = "move";
 }
 
-function renderTasks(tareas) {
-    ['pendiente', 'en_progreso', 'completada'].forEach(estado => {
-        const col = document.getElementById(`col-${estado}`);
-        if(col) col.innerHTML = '';
-    });
-
-    tareas.forEach(t => {
-        let estadoKey = normalizeStatus(t.estado);
-        const col = document.getElementById(`col-${estadoKey}`);
-        
-        if (col) {
-            const card = document.createElement('div');
-            card.className = `task-card ${estadoKey === 'completada' ? 'completed' : ''}`;
-            card.draggable = true;
-            card.id = `task-${t.id}`;
-            card.dataset.id = t.id; 
-            
-            card.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:start;">
-                    <h4 style="margin:0; flex:1; font-size:1rem;">${t.titulo}</h4>
-                    <span class="star-icon" onclick="toggleFavorito(${t.id}, this)">★</span>
-                </div>
-                <p style="margin: 5px 0; font-size:0.9rem; color:#666;">${t.descripcion || ''}</p>
-                ${t.fecha_limite ? `<small style="color:#888; display:block; margin-top:5px;">📅 ${new Date(t.fecha_limite).toLocaleDateString()}</small>` : ''}
-            `;
-            
-            // Eventos Drag
-            card.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', t.id);
-                e.dataTransfer.effectAllowed = 'move';
-                card.classList.add('dragging');
-            });
-            
-            card.addEventListener('dragend', () => {
-                card.classList.remove('dragging');
-            });
-
-            col.appendChild(card);
-        }
-    });
-}
-
-function normalizeStatus(status) {
-    if(!status) return 'pendiente';
-    const s = status.toLowerCase();
-    if (s === 'por hacer' || s === 'todo') return 'pendiente';
-    if (s === 'en curso' || s === 'in_progress') return 'en_progreso';
-    if (s === 'listo' || s === 'done') return 'completada';
-    return s;
-}
-
-// --- Favoritos ---
-async function toggleFavorito(taskId, iconElement) {
-    event.stopPropagation(); 
-    const user = JSON.parse(localStorage.getItem('user'));
-    const isActive = iconElement.classList.contains('active');
-    
-    if (!isActive) {
-        const res = await authFetch(`/tareas/${taskId}/favorito`, {
-            method: 'POST',
-            body: JSON.stringify({ usuario_id: user.id })
-        });
-        if (res.ok) iconElement.classList.add('active');
-    } else {
-        const res = await authFetch(`/tareas/${taskId}/favorito/${user.id}`, {
-            method: 'DELETE'
-        });
-        if (res.ok) iconElement.classList.remove('active');
-    }
-}
-
-// --- Drag & Drop Logic ---
 window.allowDrop = (e) => e.preventDefault();
 
 window.dropTask = async (e, nuevoEstado) => {
@@ -105,28 +18,29 @@ window.dropTask = async (e, nuevoEstado) => {
     
     if(!card) return;
 
+    // Mover UI
     const targetCol = document.getElementById(`col-${nuevoEstado}`);
     targetCol.appendChild(card);
 
+    // Actualizar Backend
     const res = await authFetch(`/tareas/${taskId}`, {
         method: 'PUT',
         body: JSON.stringify({ estado: nuevoEstado })
     });
 
     if (!res.ok) {
-        alert("Error al mover la tarea. Recargando...");
-        loadBoard();
+        alert("Error. Recargando...");
+        window.location.reload();
     }
 };
 
-// --- Modales Tarea ---
+// --- Modales ---
 const modal = document.getElementById('createTaskModal');
 const form = document.getElementById('createTaskForm');
 
 window.openTaskModal = function(estadoDefault) {
     document.getElementById('t-estado').value = estadoDefault;
     modal.classList.add('show');
-    document.getElementById('t-titulo').focus();
 }
 
 window.closeTaskModal = function() {
@@ -136,18 +50,13 @@ window.closeTaskModal = function() {
 
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const titulo = document.getElementById('t-titulo').value;
-    const desc = document.getElementById('t-desc').value;
-    const estado = document.getElementById('t-estado').value;
-    const fecha = document.getElementById('t-fecha').value;
-
-    // --- CORRECCIÓN: Estructura plana para el DTO ---
+    
     const newTask = {
-        titulo: titulo,
-        descripcion: desc,
-        estado: estado,
-        fecha_limite: fecha || null,
-        proyecto_id: parseInt(projectId) // Enviamos ID directo
+        titulo: document.getElementById('t-titulo').value,
+        descripcion: document.getElementById('t-desc').value,
+        estado: document.getElementById('t-estado').value,
+        fecha_limite: document.getElementById('t-fecha').value || null,
+        proyecto_id: projectId // Usamos la variable inyectada por Thymeleaf
     };
 
     const res = await authFetch('/tareas', {
@@ -157,9 +66,8 @@ form.addEventListener('submit', async (e) => {
 
     if (res && res.ok) {
         closeTaskModal();
-        loadBoard();
+        window.location.reload(); // Recargar para ver la nueva tarea
     } else {
-        const errorData = await res.json().catch(() => ({})); 
-        alert('Error al crear tarea: ' + (errorData.message || 'Error desconocido'));
+        alert('Error al crear tarea');
     }
 });

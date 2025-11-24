@@ -1,46 +1,70 @@
-// ... métodos anteriores (login, getMe, getDashboard) ...
+package com.sprintix.web.service;
 
-    // Obtener lista de proyectos
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import java.util.List;
+import java.util.Map;
+import java.util.Collections;
+
+@Service
+public class ApiService {
+
+    @Value("${API_URL_PUBLIC:http://localhost:8080/api}")
+    private String apiUrl;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    // Login
+    public String login(String email, String password) {
+        try {
+            Map<String, String> body = Map.of("email", email, "password", password);
+            ResponseEntity<Map> response = restTemplate.postForEntity(apiUrl + "/auth/login", body, Map.class);
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                return (String) response.getBody().get("token");
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return null;
+    }
+
+    // Get Me
+    public Map getMe(String token) {
+        return makeGetRequest(apiUrl + "/auth/me", token, Map.class);
+    }
+
+    // Get Dashboard
+    public Map getDashboard(int usuarioId, String token) {
+        return makeGetRequest(apiUrl + "/usuarios/" + usuarioId + "/dashboard", token, Map.class);
+    }
+
+    // --- NUEVOS MÉTODOS ---
+
+    // Get Proyectos
     public List<Map<String, Object>> getProyectos(String token) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-
-        try {
-            ResponseEntity<List> response = restTemplate.exchange(
-                apiUrl + "/proyectos",
-                HttpMethod.GET,
-                entity,
-                List.class
-            );
-            return response.getBody();
-        } catch (Exception e) {
-            return List.of(); // Retornar lista vacía si falla
-        }
+        List result = makeGetRequest(apiUrl + "/proyectos", token, List.class);
+        return result != null ? result : Collections.emptyList();
     }
 
-    // Obtener datos para el Tablero (Proyecto + Tareas)
+    // Get Tablero (Proyecto + Tareas)
     public Map<String, Object> getTableroData(int proyectoId, String token) {
+        Map proyecto = makeGetRequest(apiUrl + "/proyectos/" + proyectoId, token, Map.class);
+        List tareas = makeGetRequest(apiUrl + "/tareas/proyecto/" + proyectoId, token, List.class);
+        
+        if (proyecto != null) {
+            return Map.of("proyecto", proyecto, "tareas", tareas != null ? tareas : Collections.emptyList());
+        }
+        return null;
+    }
+
+    // Helper genérico para no repetir código
+    private <T> T makeGetRequest(String url, String token, Class<T> responseType) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         HttpEntity<String> entity = new HttpEntity<>(headers);
-
         try {
-            // 1. Pedir Proyecto
-            ResponseEntity<Map> resProyecto = restTemplate.exchange(
-                apiUrl + "/proyectos/" + proyectoId, HttpMethod.GET, entity, Map.class
-            );
-            
-            // 2. Pedir Tareas
-            ResponseEntity<List> resTareas = restTemplate.exchange(
-                apiUrl + "/tareas/proyecto/" + proyectoId, HttpMethod.GET, entity, List.class
-            );
-
-            return Map.of(
-                "proyecto", resProyecto.getBody(),
-                "tareas", resTareas.getBody()
-            );
-        } catch (Exception e) {
-            return null;
-        }
+            ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.GET, entity, responseType);
+            return response.getBody();
+        } catch (Exception e) { return null; }
     }
+}
