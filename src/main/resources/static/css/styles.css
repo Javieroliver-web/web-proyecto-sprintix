@@ -1,60 +1,69 @@
-:root {
-    --primary-color: #2a9d8f;
-    --primary-dark: #264653;
-    --bg-light: #f4f7fa;
-    --bg-white: #ffffff;
-    --text-primary: #333;
-    --border-color: #e0e0e0;
-    --sidebar-width: 250px;
-    --header-height: 60px;
+/* --- AÑADIR AL FINAL DE styles.css --- */
+
+/* Estilos de Modales */
+.modal {
+    display: none; /* Oculto por defecto */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5); /* Fondo oscuro transparente */
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', 'Segoe UI', sans-serif; background: var(--bg-light); color: var(--text-primary); }
-a { text-decoration: none; color: inherit; }
+.modal.show {
+    display: flex;
+    opacity: 1;
+}
 
-/* Layout Grid */
-.app-layout { display: flex; height: 100vh; overflow: hidden; }
-.main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.content-area { flex: 1; padding: 2rem; overflow-y: auto; }
+.modal-content {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
+}
 
-/* Sidebar */
-.sidebar { width: var(--sidebar-width); background: var(--bg-white); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 1.5rem; }
-.sidebar-header { margin-bottom: 2rem; font-weight: bold; font-size: 1.2rem; color: var(--primary-color); }
-.nav-link { display: block; padding: 0.8rem; margin-bottom: 0.5rem; border-radius: 6px; color: #555; }
-.nav-link:hover, .nav-link.active { background: #e0f2f1; color: var(--primary-dark); font-weight: 600; }
-.sidebar-footer { margin-top: auto; }
+.modal.show .modal-content {
+    transform: translateY(0);
+}
 
-/* Header */
-.header { height: var(--header-height); background: var(--bg-white); border-bottom: 1px solid var(--border-color); display: flex; justify-content: flex-end; align-items: center; padding: 0 2rem; }
-.user-avatar { width: 35px; height: 35px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+}
 
-/* Componentes */
-.btn { padding: 0.6rem 1.2rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: 0.2s; }
-.btn-primary { background: var(--primary-color); color: white; }
-.btn-primary:hover { background: var(--primary-dark); }
-.btn-secondary { background: #eee; color: #333; }
+.modal-header h3 { margin: 0; color: var(--primary-color); }
 
-.page-header { display: flex; justify-content: space-between; margin-bottom: 2rem; align-items: center; }
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #999;
+}
 
-/* Login */
-.login-wrapper { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #fff 0%, #e0f7fa 100%); }
-.login-box { background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-.form-group { margin-bottom: 1.5rem; }
-.form-control { width: 100%; padding: 0.8rem; border: 2px solid #eee; border-radius: 8px; margin-top: 0.5rem; }
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
 
-/* Proyectos Grid */
-.project-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-.project-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.2s; border: 1px solid transparent; }
-.project-card:hover { transform: translateY(-4px); border-color: var(--primary-color); }
-.project-status { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; margin-top: 1rem; background: #eee; }
-.status-completada { background: #d1fae5; color: #065f46; }
-
-/* Board Kanban */
-.board-container { display: flex; gap: 1.5rem; height: calc(100vh - 150px); overflow-x: auto; }
-.board-column { flex: 1; min-width: 300px; background: #f8f9fa; border-radius: 12px; display: flex; flex-direction: column; padding: 1rem; border: 1px solid #eee; }
-.column-header { display: flex; justify-content: space-between; margin-bottom: 1rem; font-weight: 600; }
-.column-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.8rem; }
-.task-card { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: grab; border: 1px solid #eee; }
-.task-card:active { cursor: grabbing; }
-.task-card.completed { opacity: 0.7; text-decoration: line-through; }
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+}

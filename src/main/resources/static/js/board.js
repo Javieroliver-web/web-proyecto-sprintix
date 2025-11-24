@@ -15,7 +15,7 @@ async function loadBoard() {
     }
 
     // 2. Tareas
-    const resT = await authFetch(`/tareas?proyecto_id=${projectId}`); // Ajusta según tu API real
+    const resT = await authFetch(`/tareas?proyecto_id=${projectId}`);
     if (resT.ok) {
         renderTasks(await resT.json());
     }
@@ -27,7 +27,6 @@ function renderTasks(tareas) {
     });
 
     tareas.forEach(t => {
-        // Normalizar estado
         let estadoKey = t.estado.toLowerCase();
         if(estadoKey === 'por hacer') estadoKey = 'pendiente';
         if(estadoKey === 'en curso') estadoKey = 'en_progreso';
@@ -39,20 +38,19 @@ function renderTasks(tareas) {
             card.className = `task-card ${estadoKey === 'completada' ? 'completed' : ''}`;
             card.draggable = true;
             card.id = `task-${t.id}`;
+            // Se puede añadir un onclick aquí para editar tarea en el futuro
             card.innerHTML = `<h4>${t.titulo}</h4><p>${t.descripcion || ''}</p>`;
             
-            // Eventos Drag Native
             card.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('text/plain', t.id);
                 e.dataTransfer.effectAllowed = 'move';
             });
-
             col.appendChild(card);
         }
     });
 }
 
-// Drag & Drop Global Handlers
+// --- Drag & Drop ---
 window.allowDrop = (e) => e.preventDefault();
 
 window.dropTask = async (e, nuevoEstado) => {
@@ -65,21 +63,48 @@ window.dropTask = async (e, nuevoEstado) => {
 
     // Backend Update
     await authFetch(`/tareas/${taskId}`, {
-        method: 'PUT', // O PATCH
+        method: 'PUT',
         body: JSON.stringify({ estado: nuevoEstado })
     });
 };
 
-function openCreateModal(estado) {
-    const titulo = prompt("Título de la tarea:");
-    if (titulo) {
-        authFetch('/tareas', {
-            method: 'POST',
-            body: JSON.stringify({
-                titulo, 
-                estado, 
-                proyecto_id: projectId
-            })
-        }).then(() => loadBoard());
-    }
+// --- Gestión Modal Tarea ---
+const modal = document.getElementById('createTaskModal');
+const form = document.getElementById('createTaskForm');
+
+window.openTaskModal = function(estadoDefault) {
+    document.getElementById('t-estado').value = estadoDefault;
+    modal.classList.add('show');
+    document.getElementById('t-titulo').focus();
 }
+
+window.closeTaskModal = function() {
+    modal.classList.remove('show');
+    form.reset();
+}
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const titulo = document.getElementById('t-titulo').value;
+    const desc = document.getElementById('t-desc').value;
+    const estado = document.getElementById('t-estado').value;
+
+    const newTask = {
+        titulo: titulo,
+        descripcion: desc,
+        estado: estado,
+        proyecto_id: projectId
+    };
+
+    const res = await authFetch('/tareas', {
+        method: 'POST',
+        body: JSON.stringify(newTask)
+    });
+
+    if (res && res.ok) {
+        closeTaskModal();
+        loadBoard(); // Recargar el tablero
+    } else {
+        alert('Error al crear tarea');
+    }
+});

@@ -13,28 +13,63 @@
             
             <div class="content-area">
                 <div class="page-header">
-                    <h2 id="boardTitle">Cargando...</h2>
-                    <button class="btn btn-secondary" onclick="location.href='/proyectos.html'">← Volver</button>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button class="btn btn-secondary" onclick="location.href='/proyectos.html'">←</button>
+                        <h2 id="boardTitle">Cargando...</h2>
+                    </div>
                 </div>
 
                 <div class="board-container">
                     <div class="board-column" ondrop="dropTask(event, 'pendiente')" ondragover="allowDrop(event)">
-                        <div class="column-header"><h3>Por hacer</h3> <button onclick="openCreateModal('pendiente')">+</button></div>
+                        <div class="column-header">
+                            <span>Por hacer</span> 
+                            <button class="btn-icon-add" onclick="openTaskModal('pendiente')">+</button>
+                        </div>
                         <div class="column-content" id="col-pendiente"></div>
                     </div>
 
                     <div class="board-column" ondrop="dropTask(event, 'en_progreso')" ondragover="allowDrop(event)">
-                        <div class="column-header"><h3>En curso</h3> <button onclick="openCreateModal('en_progreso')">+</button></div>
+                        <div class="column-header">
+                            <span>En curso</span> 
+                            <button class="btn-icon-add" onclick="openTaskModal('en_progreso')">+</button>
+                        </div>
                         <div class="column-content" id="col-en_progreso"></div>
                     </div>
 
                     <div class="board-column" ondrop="dropTask(event, 'completada')" ondragover="allowDrop(event)">
-                        <div class="column-header"><h3>Listo</h3></div>
+                        <div class="column-header">
+                            <span>Listo</span> 
+                            <button class="btn-icon-add" onclick="openTaskModal('completada')">+</button>
+                        </div>
                         <div class="column-content" id="col-completada"></div>
                     </div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <div id="createTaskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nueva Tarea</h3>
+                <button class="close-btn" onclick="closeTaskModal()">&times;</button>
+            </div>
+            <form id="createTaskForm">
+                <input type="hidden" id="t-estado">
+                <div class="form-group">
+                    <label for="t-titulo">Título *</label>
+                    <input type="text" id="t-titulo" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="t-desc">Descripción</label>
+                    <textarea id="t-desc" class="form-control"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Tarea</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="js/auth.js"></script>
