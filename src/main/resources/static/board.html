@@ -51,22 +51,32 @@
     <div id="createTaskModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Nueva Tarea</h3>
+                <h3>✨ Nueva Tarea</h3>
                 <button class="close-btn" onclick="closeTaskModal()">&times;</button>
             </div>
-            <form id="createTaskForm">
+            <form id="createTaskForm" style="padding-top: 10px;">
                 <input type="hidden" id="t-estado">
+                
                 <div class="form-group">
-                    <label for="t-titulo">Título *</label>
-                    <input type="text" id="t-titulo" class="form-control" required>
+                    <label for="t-titulo">Título de la tarea</label>
+                    <input type="text" id="t-titulo" class="form-control" required placeholder="Ej: Diseñar base de datos">
                 </div>
+                
                 <div class="form-group">
-                    <label for="t-desc">Descripción</label>
-                    <textarea id="t-desc" class="form-control"></textarea>
+                    <label for="t-desc">Detalles</label>
+                    <textarea id="t-desc" class="form-control" rows="3" placeholder="Describe los requerimientos..."></textarea>
                 </div>
+
+                <div class="row-grid">
+                    <div class="form-group">
+                        <label for="t-fecha">Fecha Límite</label>
+                        <input type="date" id="t-fecha" class="form-control">
+                    </div>
+                </div>
+
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Crear Tarea</button>
+                    <button type="submit" class="btn btn-primary">Añadir Tarea</button>
                 </div>
             </form>
         </div>

@@ -18,7 +18,6 @@ async function loadBoard() {
     }
 
     // 2. Tareas del Proyecto
-    // Endpoint: GET /api/tareas/proyecto/{id}
     const resT = await authFetch(`/tareas/proyecto/${projectId}`);
     if (resT.ok) {
         renderTasks(await resT.json());
@@ -40,11 +39,15 @@ function renderTasks(tareas) {
             card.className = `task-card ${estadoKey === 'completada' ? 'completed' : ''}`;
             card.draggable = true;
             card.id = `task-${t.id}`;
-            card.dataset.id = t.id; // Guardamos ID real en dataset
+            card.dataset.id = t.id; 
             
             card.innerHTML = `
-                <h4>${t.titulo}</h4>
-                <p>${t.descripcion || ''}</p>
+                <div style="display:flex; justify-content:space-between; align-items:start;">
+                    <h4 style="margin:0; flex:1; font-size:1rem;">${t.titulo}</h4>
+                    <span class="star-icon" onclick="toggleFavorito(${t.id}, this)">★</span>
+                </div>
+                <p style="margin: 5px 0; font-size:0.9rem; color:#666;">${t.descripcion || ''}</p>
+                ${t.fecha_limite ? `<small style="color:#888; display:block; margin-top:5px;">📅 ${new Date(t.fecha_limite).toLocaleDateString()}</small>` : ''}
             `;
             
             // Eventos Drag
@@ -72,10 +75,28 @@ function normalizeStatus(status) {
     return s;
 }
 
-// --- Drag & Drop Logic ---
-window.allowDrop = (e) => {
-    e.preventDefault();
+// --- Favoritos ---
+async function toggleFavorito(taskId, iconElement) {
+    event.stopPropagation(); 
+    const user = JSON.parse(localStorage.getItem('user'));
+    const isActive = iconElement.classList.contains('active');
+    
+    if (!isActive) {
+        const res = await authFetch(`/tareas/${taskId}/favorito`, {
+            method: 'POST',
+            body: JSON.stringify({ usuario_id: user.id })
+        });
+        if (res.ok) iconElement.classList.add('active');
+    } else {
+        const res = await authFetch(`/tareas/${taskId}/favorito/${user.id}`, {
+            method: 'DELETE'
+        });
+        if (res.ok) iconElement.classList.remove('active');
+    }
 }
+
+// --- Drag & Drop Logic ---
+window.allowDrop = (e) => e.preventDefault();
 
 window.dropTask = async (e, nuevoEstado) => {
     e.preventDefault();
@@ -84,20 +105,12 @@ window.dropTask = async (e, nuevoEstado) => {
     
     if(!card) return;
 
-    // UI Optimista: Mover la tarjeta inmediatamente
     const targetCol = document.getElementById(`col-${nuevoEstado}`);
     targetCol.appendChild(card);
 
-    // Llamada API para persistir cambio
     const res = await authFetch(`/tareas/${taskId}`, {
         method: 'PUT',
-        body: JSON.stringify({ 
-            estado: nuevoEstado 
-            // Nota: Al ser PUT, el backend podría requerir el resto de campos.
-            // Si falla, cambiaremos a PATCH o enviaremos el objeto completo.
-            // Tu TareaController hace: tarea.setEstado(...) y guarda.
-            // Como recupera la tarea de DB primero (obtenerPorId), esto funcionará bien.
-        })
+        body: JSON.stringify({ estado: nuevoEstado })
     });
 
     if (!res.ok) {
@@ -126,16 +139,15 @@ form.addEventListener('submit', async (e) => {
     const titulo = document.getElementById('t-titulo').value;
     const desc = document.getElementById('t-desc').value;
     const estado = document.getElementById('t-estado').value;
+    const fecha = document.getElementById('t-fecha').value;
 
-    // Estructura para JPA: enviamos el proyecto como objeto anidado
+    // --- CORRECCIÓN: Estructura plana para el DTO ---
     const newTask = {
         titulo: titulo,
         descripcion: desc,
         estado: estado,
-        fecha_limite: new Date(),
-        proyecto: {
-            id: projectId
-        }
+        fecha_limite: fecha || null,
+        proyecto_id: parseInt(projectId) // Enviamos ID directo
     };
 
     const res = await authFetch('/tareas', {
@@ -147,6 +159,7 @@ form.addEventListener('submit', async (e) => {
         closeTaskModal();
         loadBoard();
     } else {
-        alert('Error al crear tarea');
+        const errorData = await res.json().catch(() => ({})); 
+        alert('Error al crear tarea: ' + (errorData.message || 'Error desconocido'));
     }
 });

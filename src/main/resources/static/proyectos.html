@@ -26,21 +26,35 @@
     <div id="createProjectModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Nuevo Proyecto</h3>
+                <h3>📂 Nuevo Proyecto</h3>
                 <button class="close-btn" onclick="closeProjectModal()">&times;</button>
             </div>
-            <form id="createProjectForm">
+            <form id="createProjectForm" style="padding-top: 10px;">
+                
                 <div class="form-group">
-                    <label for="p-nombre">Nombre del Proyecto *</label>
-                    <input type="text" id="p-nombre" class="form-control" required placeholder="Ej: Rediseño Web">
+                    <label for="p-nombre">Nombre del Proyecto</label>
+                    <input type="text" id="p-nombre" class="form-control" required placeholder="Ej: Rediseño Web Corporativa">
                 </div>
+                
                 <div class="form-group">
                     <label for="p-desc">Descripción</label>
-                    <textarea id="p-desc" class="form-control" placeholder="Detalles del proyecto..."></textarea>
+                    <textarea id="p-desc" class="form-control" rows="3" placeholder="¿Cuál es el objetivo de este proyecto?"></textarea>
                 </div>
+
+                <div class="row-grid">
+                    <div class="form-group">
+                        <label for="p-inicio">Fecha de Inicio</label>
+                        <input type="date" id="p-inicio" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="p-fin">Fecha Estimada Fin</label>
+                        <input type="date" id="p-fin" class="form-control">
+                    </div>
+                </div>
+
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeProjectModal()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="submit" class="btn btn-primary">Crear Proyecto</button>
                 </div>
             </form>
         </div>

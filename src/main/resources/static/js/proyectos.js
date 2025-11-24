@@ -37,6 +37,10 @@ const form = document.getElementById('createProjectForm');
 window.openProjectModal = function() {
     modal.classList.add('show');
     document.getElementById('p-nombre').focus();
+    // Setear fecha de hoy por defecto en inicio
+    if(!document.getElementById('p-inicio').value) {
+        document.getElementById('p-inicio').valueAsDate = new Date();
+    }
 }
 
 window.closeProjectModal = function() {
@@ -54,13 +58,14 @@ form.addEventListener('submit', async (e) => {
     
     const nombre = document.getElementById('p-nombre').value;
     const descripcion = document.getElementById('p-desc').value;
+    const inicio = document.getElementById('p-inicio').value;
+    const fin = document.getElementById('p-fin').value;
     
-    // Objeto Proyecto tal como lo espera tu Entity Proyecto.java
-    // El usuario creador lo saca el backend del Token JWT
     const newProject = {
         nombre: nombre,
         descripcion: descripcion,
-        fecha_inicio: new Date(), 
+        fecha_inicio: inicio || new Date(), 
+        fecha_fin: fin || null,
         estado: 'Activo'
     };
 
@@ -74,7 +79,7 @@ form.addEventListener('submit', async (e) => {
             closeProjectModal();
             loadProjects(); // Recargar la lista
         } else {
-            const errorData = await res.json(); // Intentar leer error del backend
+            const errorData = await res.json();
             alert('Error: ' + (errorData.message || 'No se pudo crear el proyecto'));
         }
     } catch (error) {
