@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Tablero - Sprintix</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-layout">
+        <div id="sidebar-container"></div>
+        <main class="main-content">
+            <div id="header-container"></div>
+            
+            <div class="content-area">
+                <div class="page-header">
+                    <h2 id="boardTitle">Cargando...</h2>
+                    <button class="btn btn-secondary" onclick="location.href='/proyectos.html'">← Volver</button>
+                </div>
+
+                <div class="board-container">
+                    <div class="board-column" ondrop="dropTask(event, 'pendiente')" ondragover="allowDrop(event)">
+                        <div class="column-header"><h3>Por hacer</h3> <button onclick="openCreateModal('pendiente')">+</button></div>
+                        <div class="column-content" id="col-pendiente"></div>
+                    </div>
+
+                    <div class="board-column" ondrop="dropTask(event, 'en_progreso')" ondragover="allowDrop(event)">
+                        <div class="column-header"><h3>En curso</h3> <button onclick="openCreateModal('en_progreso')">+</button></div>
+                        <div class="column-content" id="col-en_progreso"></div>
+                    </div>
+
+                    <div class="board-column" ondrop="dropTask(event, 'completada')" ondragover="allowDrop(event)">
+                        <div class="column-header"><h3>Listo</h3></div>
+                        <div class="column-content" id="col-completada"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/board.js"></script>
+</body>
+</html>

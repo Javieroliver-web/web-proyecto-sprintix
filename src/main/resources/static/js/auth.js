@@ -1,113 +1,89 @@
-// ==========================================
-// GESTIÓN DE AUTENTICACIÓN Y CONFIGURACIÓN
-// ==========================================
+// Variable global para la API
+let API_URL = 'http://localhost:8080/api';
 
-// Variable global para la URL de la API (se actualiza al cargar)
-let API_URL = 'http://localhost:8080/api'; 
-
-// Se ejecuta automáticamente al cargar cualquier página que incluya este script
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadConfig();      // 1. Cargar configuración
-    setupLoginListener();    // 2. Activar formulario de login (si existe)
-    checkAuth();             // 3. Verificar si el usuario tiene permiso (si no es login)
+    await loadConfig();
+    setupLoginListener();
+    checkAuth();
 });
 
-/**
- * 1. Carga la configuración desde el Backend Java (Controller)
- * Esto permite que la URL de la API sea dinámica (Docker vs Local)
- */
 async function loadConfig() {
     try {
         const response = await fetch('/config');
         if (response.ok) {
             const config = await response.json();
-            if (config.apiUrl) {
-                API_URL = config.apiUrl;
-                console.log('🔌 API configurada en:', API_URL);
-            }
+            if (config.apiUrl) API_URL = config.apiUrl;
         }
+    } catch (e) { console.warn('Usando API localhost por defecto'); }
+}
+
+// --- Nueva función central para peticiones autenticadas ---
+async function authFetch(endpoint, options = {}) {
+    const token = localStorage.getItem('token');
+    if (!options.headers) options.headers = {};
+    
+    if (token) options.headers['Authorization'] = `Bearer ${token}`;
+    if (!options.headers['Content-Type'] && !(options.body instanceof FormData)) {
+        options.headers['Content-Type'] = 'application/json';
+    }
+
+    try {
+        const response = await fetch(`${API_URL}${endpoint}`, options);
+        if (response.status === 401) {
+            logout(); // Token expirado
+            return null;
+        }
+        return response;
     } catch (error) {
-        console.warn('No se pudo cargar /config, usando localhost por defecto.');
+        console.error("Error de red:", error);
+        return null;
     }
 }
 
-/**
- * 2. Configura el evento submit del formulario de Login
- */
 function setupLoginListener() {
     const loginForm = document.getElementById('loginForm');
-    if (!loginForm) return; // Si no estamos en el login, no hacemos nada
-
-    const errorMsg = document.getElementById('errorMsg');
+    if (!loginForm) return;
 
     loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); // Evitar recarga de página
-        
-        if(errorMsg) errorMsg.style.display = 'none'; // Ocultar error previo
-        
+        e.preventDefault();
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+        const errorMsg = document.getElementById('errorMsg');
 
         try {
-            // Llamada a la API (Endpoint AuthController)
             const res = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
-
             const data = await res.json();
 
             if (res.ok && data.success) {
-                // LOGIN EXITOSO
-                console.log('Login correcto:', data.usuario.nombre);
-                
-                // Guardamos sesión en el navegador
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.usuario));
-                
-                // Redirigir al Dashboard
                 window.location.href = '/dashboard.html';
             } else {
-                // LOGIN FALLIDO
-                throw new Error(data.message || 'Credenciales incorrectas');
+                throw new Error(data.message || 'Error de login');
             }
         } catch (error) {
-            console.error(error);
             if(errorMsg) {
-                errorMsg.textContent = error.message || 'Error de conexión';
+                errorMsg.textContent = error.message;
                 errorMsg.style.display = 'block';
-            } else {
-                alert(error.message);
             }
         }
     });
 }
 
-/**
- * 3. Verifica si hay sesión activa
- * Si estamos en una página protegida (no login) y no hay token, echa al usuario.
- */
 function checkAuth() {
     const path = window.location.pathname;
-    const isLoginPage = path === '/' || path === '/index.html' || path.endsWith('index.html');
+    const isPublic = path === '/' || path.endsWith('index.html') || path.endsWith('login.html');
     const token = localStorage.getItem('token');
 
-    if (!isLoginPage && !token) {
-        // Si intenta entrar a dashboard sin token -> Al Login
-        window.location.href = '/index.html';
-    } else if (isLoginPage && token) {
-        // Si ya tiene token y va al login -> Al Dashboard
-        window.location.href = '/dashboard.html';
-    }
+    if (!isPublic && !token) window.location.href = '/index.html';
+    if (isPublic && token) window.location.href = '/dashboard.html';
 }
 
-/**
- * 4. Función Global para Cerrar Sesión
- * Se llama desde el botón "Salir" del HTML
- */
 function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.clear();
     window.location.href = '/index.html';
 }

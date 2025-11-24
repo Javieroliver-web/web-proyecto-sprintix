@@ -6,65 +6,34 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="app-container">
-        <nav class="sidebar">
-            <div class="logo-container">
-                <img src="img/Logo2.png" class="logo-img">
-                <span class="brand-name">Sprintix</span>
-            </div>
-            <ul class="nav-links">
-                <li><a href="/dashboard.html" class="nav-item active">📊 Dashboard</a></li>
-                <li><a href="/proyectos.html" class="nav-item">📁 Proyectos</a></li>
-                <li><a href="#" onclick="logout()" class="nav-item">🚪 Salir</a></li>
-            </ul>
-        </nav>
-
+    <div class="app-layout">
+        <div id="sidebar-container"></div>
         <main class="main-content">
-            <header class="header">
-                <h2 id="pageTitle">Dashboard</h2>
-                <div class="user-profile">
-                    <span id="userName">Cargando...</span>
-                    <div class="avatar" id="userInitial">U</div>
-                </div>
-            </header>
-
+            <div id="header-container"></div>
+            
             <div class="content-area">
+                <h1>Bienvenido a Sprintix</h1>
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h3>Proyectos</h3>
-                        <div class="stat-number">12</div>
+                        <h3>Mis Proyectos</h3>
+                        <div class="stat-number" id="stat-proyectos">-</div>
                     </div>
-                    <div class="stat-card">
-                        <h3>Tareas</h3>
-                        <div class="stat-number" style="color: #f1c40f;">24</div>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Completadas</h3>
-                        <div class="stat-number" style="color: #2ecc71;">85%</div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h3>Bienvenido al nuevo entorno servidor</h3>
-                    <p>Esta página está servida por Java Spring Boot y conecta con tu API REST.</p>
                 </div>
             </div>
         </main>
     </div>
 
+    <script src="js/auth.js"></script>
+    <script src="js/layout.js"></script>
     <script>
-        // Lógica común de sesión
-        const userStr = localStorage.getItem('user');
-        if (!userStr) window.location.href = '/index.html';
-        
-        const user = JSON.parse(userStr);
-        document.getElementById('userName').textContent = user.nombre;
-        document.getElementById('userInitial').textContent = user.nombre.charAt(0).toUpperCase();
-
-        function logout() {
-            localStorage.clear();
-            window.location.href = '/index.html';
-        }
+        // Lógica inline simple para dashboard
+        document.addEventListener('DOMContentLoaded', async () => {
+            const res = await authFetch('/proyectos');
+            if(res.ok) {
+                const data = await res.json();
+                document.getElementById('stat-proyectos').innerText = data.length;
+            }
+        });
     </script>
 </body>
 </html>

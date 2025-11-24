@@ -1,39 +1,30 @@
-<div class="content-area">
-  <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-      <h2>Mis Proyectos</h2>
-      <button class="btn btn-primary">+ Nuevo Proyecto</button>
-  </div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Proyectos - Sprintix</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-layout">
+        <div id="sidebar-container"></div>
+        <main class="main-content">
+            <div id="header-container"></div>
+            
+            <div class="content-area">
+                <div class="page-header">
+                    <h2>Mis Proyectos</h2>
+                    <button class="btn btn-primary" onclick="alert('Funcionalidad backend pendiente')">+ Crear</button>
+                </div>
+                <div id="projectsGrid" class="project-cards-grid">
+                    <p>Cargando...</p>
+                </div>
+            </div>
+        </main>
+    </div>
 
-  <div id="projectsContainer" class="stats-grid">
-      <p>Cargando proyectos...</p>
-  </div>
-</div>
-<script>
-// Añade esto al script para cargar proyectos
-async function loadProjects() {
-const config = await fetch('/config').then(r => r.json());
-const token = localStorage.getItem('token');
-
-const res = await fetch(`${config.apiUrl}/proyectos`, {
-headers: { 'Authorization': `Bearer ${token}` }
-});
-
-if (res.ok) {
-const proyectos = await res.json();
-const container = document.getElementById('projectsContainer');
-container.innerHTML = '';
-
-proyectos.forEach(p => {
-  container.innerHTML += `
-      <div class="card">
-          <h3>${p.nombre}</h3>
-          <p>${p.descripcion}</p>
-          <span style="font-size:0.8rem; color: gray;">Estado: ${p.estado}</span>
-      </div>
-  `;
-});
-}
-}
-// Llama a loadProjects() al inicio
-loadProjects();
-</script>
+    <script src="js/auth.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/proyectos.js"></script>
+</body>
+</html>
