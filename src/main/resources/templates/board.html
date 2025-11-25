@@ -37,7 +37,6 @@
                 </div>
 
                 <div class="board-container">
-                    <!-- Columna: Por hacer -->
                     <div class="board-column" ondrop="dropTask(event, 'pendiente')" ondragover="allowDrop(event)">
                         <div class="column-header">
                             <span>📋 Por hacer</span> 
@@ -49,12 +48,11 @@
                                 <h4 th:text="${t.titulo}">Título</h4>
                                 <p th:text="${t.descripcion}">Desc</p>
                                 <small th:if="${t.fecha_limite}" 
-                                       th:text="'📅 ' + ${#dates.format(t.fecha_limite, 'dd/MM/yyyy')}">Fecha</small>
+                                       th:text="'📅 ' + ${#strings.substring(t.fecha_limite, 8, 10) + '-' + #strings.substring(t.fecha_limite, 5, 7) + '-' + #strings.substring(t.fecha_limite, 0, 4)}">Fecha</small>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Columna: En curso -->
                     <div class="board-column" ondrop="dropTask(event, 'en_progreso')" ondragover="allowDrop(event)">
                         <div class="column-header">
                             <span>⚙️ En curso</span> 
@@ -66,12 +64,11 @@
                                 <h4 th:text="${t.titulo}">Título</h4>
                                 <p th:text="${t.descripcion}">Desc</p>
                                 <small th:if="${t.fecha_limite}" 
-                                       th:text="'📅 ' + ${#dates.format(t.fecha_limite, 'dd/MM/yyyy')}">Fecha</small>
+                                       th:text="'📅 ' + ${#strings.substring(t.fecha_limite, 8, 10) + '-' + #strings.substring(t.fecha_limite, 5, 7) + '-' + #strings.substring(t.fecha_limite, 0, 4)}">Fecha</small>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Columna: Listo -->
                     <div class="board-column" ondrop="dropTask(event, 'completada')" ondragover="allowDrop(event)">
                         <div class="column-header">
                             <span>✅ Listo</span> 
@@ -83,7 +80,7 @@
                                 <h4 th:text="${t.titulo}">Título</h4>
                                 <p th:text="${t.descripcion}">Desc</p>
                                 <small th:if="${t.fecha_limite}" 
-                                       th:text="'📅 ' + ${#dates.format(t.fecha_limite, 'dd/MM/yyyy')}">Fecha</small>
+                                       th:text="'📅 ' + ${#strings.substring(t.fecha_limite, 8, 10) + '-' + #strings.substring(t.fecha_limite, 5, 7) + '-' + #strings.substring(t.fecha_limite, 0, 4)}">Fecha</small>
                             </div>
                         </div>
                     </div>
@@ -92,7 +89,6 @@
         </main>
     </div>
     
-    <!-- Modal Crear Tarea -->
     <div id="createTaskModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -123,7 +119,6 @@
         </div>
     </div>
 
-    <!-- Variables del servidor -->
     <script th:inline="javascript">
         const projectId = /*[[${proyecto.id}]]*/ 0;
         const JWT_TOKEN = /*[[${session.token}]]*/ '';
