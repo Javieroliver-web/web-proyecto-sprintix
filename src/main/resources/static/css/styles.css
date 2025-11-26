@@ -435,23 +435,28 @@ ul { list-style: none; }
    ========================================= */
    .toast-popup {
     position: absolute;
-    bottom: 120%; /* Encima de la campana */
-    right: -10px; /* Alineado a la derecha */
+    /* CAMBIO: En lugar de bottom: 120%, usamos top para bajarlo */
+    top: 50px;       /* Lo situamos justo debajo del icono de la campana */
+    right: 0;        /* Alineado a la derecha del contenedor */
+    
     background: white;
     padding: 12px 16px;
     border-radius: 8px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    
+    /* Sombra más suave para dar efecto de flotación sobre el contenido */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    
     display: flex;
     align-items: center;
     gap: 10px;
     width: 280px;
     z-index: 2100;
     
-    /* Animación de entrada/salida */
+    /* Animación */
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(-10px); /* Que entre bajando ligeramente */
     transition: all 0.3s ease;
-    pointer-events: none; /* Click-through cuando está invisible */
+    pointer-events: none;
     border-left: 4px solid var(--primary-color);
 }
 
@@ -461,6 +466,7 @@ ul { list-style: none; }
     pointer-events: auto;
 }
 
+/* Los colores se mantienen igual */
 .toast-popup.exito { border-left-color: #2ecc71; }
 .toast-popup.alerta { border-left-color: #e74c3c; }
 .toast-popup.info { border-left-color: #3b8ea5; }
