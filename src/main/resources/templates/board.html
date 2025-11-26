@@ -2,48 +2,37 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title th:text="${proyecto.get('nombre')} + ' - Tablero'">Tablero</title>
+    <title th:text="${proyecto['nombre']} + ' - Tablero'">Tablero</title>
     <link rel="stylesheet" href="/css/styles.css">
     <style>
-        .logout-link {
-            display: flex;
-            align-items: center;
-            margin-right: 15px;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-        }
-        .logout-link:hover {
-            opacity: 1;
-        }
+        /* Header */
+        .logout-link { display: flex; align-items: center; margin-right: 15px; opacity: 0.7; transition: opacity 0.2s; }
+        .logout-link:hover { opacity: 1; }
 
-        .task-card {
-            position: relative;
-            padding-top: 25px; /* Espacio para que el texto no choque con el botón */
-        }
-
-        /* BOTÓN ELIMINAR A LA DERECHA */
+        /* Tareas - Botón eliminar a la DERECHA */
+        .task-card { position: relative; padding-top: 25px; }
         .btn-delete-task {
-            position: absolute;
-            top: 5px;
-            right: 5px; /* DERECHA */
-            background: none;
-            border: none;
-            color: #ff4444;
-            font-size: 1.4rem;
-            line-height: 0.8;
-            font-weight: bold;
-            cursor: pointer;
-            opacity: 0.4;
-            transition: all 0.2s;
-            padding: 2px 4px;
-            border-radius: 4px;
-            z-index: 10;
+            position: absolute; top: 5px; right: 5px; /* DERECHA */
+            background: none; border: none; color: #ff4444;
+            font-size: 1.4rem; line-height: 0.8; font-weight: bold;
+            cursor: pointer; opacity: 0.4; transition: all 0.2s;
+            padding: 2px 4px; border-radius: 4px; z-index: 10;
         }
+        .btn-delete-task:hover { opacity: 1; background-color: #ffecec; }
 
-        .btn-delete-task:hover {
-            opacity: 1;
-            background-color: #ffecec;
-        }
+        /* Notificaciones */
+        .notification-wrapper { position: relative; margin-right: 20px; display: flex; align-items: center; }
+        .header-icon { height: 28px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s; }
+        .header-icon:hover { opacity: 1; }
+        .badge-count { position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; font-size: 0.65rem; padding: 2px 5px; border-radius: 10px; min-width: 16px; text-align: center; font-weight: bold; border: 2px solid #e6e6e6; pointer-events: none; }
+        
+        .notif-dropdown { display: none; position: absolute; top: 45px; right: -80px; width: 300px; background: white; border: 1px solid #e0e0e0; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-radius: 8px; z-index: 2000; flex-direction: column; overflow: hidden; }
+        .notif-dropdown.show { display: flex; animation: fadeIn 0.2s ease; }
+        .notif-header { padding: 12px 15px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .notif-list { max-height: 300px; overflow-y: auto; background: #fff; }
+        .notif-item { padding: 12px 15px; border-bottom: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: start; }
+        .btn-close-notif { border: none; background: none; color: #ccc; cursor: pointer; margin-left: 10px; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
     </style>
 </head>
 <body>
@@ -65,9 +54,19 @@
                     <a href="/logout" class="logout-link" title="Cerrar sesión">
                         <img src="/img/exiticon.png" style="height:28px" alt="Salir">
                     </a>
-                    
+                    <div class="notification-wrapper">
+                        <img src="/img/notificationicon.png" class="header-icon" id="btn-notif" onclick="toggleNotifModal()">
+                        <span class="badge-count" id="notif-count" style="display: none;">0</span>
+                        <div class="notif-dropdown" id="notif-dropdown">
+                            <div class="notif-header">
+                                <h4>Notificaciones</h4>
+                                <a href="#" onclick="markAllAsRead()" style="font-size:0.8rem; color:#3b8ea5;">Marcar leídas</a>
+                            </div>
+                            <div class="notif-list" id="notif-list"></div>
+                        </div>
+                    </div>
                     <div class="user-profile">
-                        <div class="user-avatar" th:text="${usuario != null ? #strings.substring(usuario.nombre,0,1).toUpperCase() : 'U'}">U</div>
+                        <div class="user-avatar" th:text="${usuario != null ? #strings.substring(usuario['nombre'],0,1).toUpperCase() : 'U'}">U</div>
                     </div>
                 </div>
             </header>
@@ -76,70 +75,41 @@
                 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <button class="btn btn-secondary" onclick="location.href='/proyectos'">← Volver</button>
-                        <h2 th:text="${proyecto.get('nombre')}">Nombre Proyecto</h2>
+                        <h2 th:text="${proyecto['nombre']}">Nombre Proyecto</h2>
                     </div>
                 </div>
 
                 <div class="board-container">
                     <div class="board-column" ondrop="dropTask(event, 'pendiente')" ondragover="allowDrop(event)">
-                        <div class="column-header">
-                            <span>📋 Por hacer</span> 
-                            <button class="btn-icon-add" onclick="openTaskModal('pendiente')" title="Añadir tarea">+</button>
-                        </div>
+                        <div class="column-header"><span>📋 Por hacer</span> <button class="btn-icon-add" onclick="openTaskModal('pendiente')">+</button></div>
                         <div class="column-content" id="col-pendiente">
-                            <div th:each="t : ${tareasPendientes}" class="task-card" draggable="true" 
-                                 th:id="'task-' + ${t.get('id')}" th:attr="data-id=${t.get('id')}" ondragstart="drag(event)">
-                                
-                                <button class="btn-delete-task" 
-                                        th:onclick="'deleteTask(event, ' + ${t.get('id')} + ')'"
-                                        title="Eliminar tarea">×</button>
-                                
-                                <h4 th:text="${t.get('titulo')}">Título</h4>
-                                <p th:text="${t.get('descripcion')}">Desc</p>
-                                <small th:if="${t.get('fecha_formateada')}" 
-                                       th:text="'📅 ' + ${t.get('fecha_formateada')}">Fecha</small>
+                            <div th:each="t : ${tareasPendientes}" class="task-card" draggable="true" th:id="'task-' + ${t['id']}" th:attr="data-id=${t['id']}" ondragstart="drag(event)">
+                                <button class="btn-delete-task" th:onclick="'deleteTask(event, ' + ${t['id']} + ')'">×</button>
+                                <h4 th:text="${t['titulo']}">Título</h4>
+                                <p th:text="${t['descripcion']}">Desc</p>
+                                <small th:if="${t['fecha_formateada']}" th:text="'📅 ' + ${t['fecha_formateada']}"></small>
                             </div>
                         </div>
                     </div>
-
                     <div class="board-column" ondrop="dropTask(event, 'en_progreso')" ondragover="allowDrop(event)">
-                        <div class="column-header">
-                            <span>⚙️ En curso</span> 
-                            <button class="btn-icon-add" onclick="openTaskModal('en_progreso')" title="Añadir tarea">+</button>
-                        </div>
+                        <div class="column-header"><span>⚙️ En curso</span> <button class="btn-icon-add" onclick="openTaskModal('en_progreso')">+</button></div>
                         <div class="column-content" id="col-en_progreso">
-                            <div th:each="t : ${tareasEnCurso}" class="task-card" draggable="true" 
-                                 th:id="'task-' + ${t.get('id')}" th:attr="data-id=${t.get('id')}" ondragstart="drag(event)">
-                                
-                                <button class="btn-delete-task" 
-                                        th:onclick="'deleteTask(event, ' + ${t.get('id')} + ')'"
-                                        title="Eliminar tarea">×</button>
-
-                                <h4 th:text="${t.get('titulo')}">Título</h4>
-                                <p th:text="${t.get('descripcion')}">Desc</p>
-                                <small th:if="${t.get('fecha_formateada')}" 
-                                       th:text="'📅 ' + ${t.get('fecha_formateada')}">Fecha</small>
+                            <div th:each="t : ${tareasEnCurso}" class="task-card" draggable="true" th:id="'task-' + ${t['id']}" th:attr="data-id=${t['id']}" ondragstart="drag(event)">
+                                <button class="btn-delete-task" th:onclick="'deleteTask(event, ' + ${t['id']} + ')'">×</button>
+                                <h4 th:text="${t['titulo']}">Título</h4>
+                                <p th:text="${t['descripcion']}">Desc</p>
+                                <small th:if="${t['fecha_formateada']}" th:text="'📅 ' + ${t['fecha_formateada']}"></small>
                             </div>
                         </div>
                     </div>
-
                     <div class="board-column" ondrop="dropTask(event, 'completada')" ondragover="allowDrop(event)">
-                        <div class="column-header">
-                            <span>✅ Listo</span> 
-                            <button class="btn-icon-add" onclick="openTaskModal('completada')" title="Añadir tarea">+</button>
-                        </div>
+                        <div class="column-header"><span>✅ Listo</span> <button class="btn-icon-add" onclick="openTaskModal('completada')">+</button></div>
                         <div class="column-content" id="col-completada">
-                            <div th:each="t : ${tareasCompletadas}" class="task-card completed" draggable="true" 
-                                 th:id="'task-' + ${t.get('id')}" th:attr="data-id=${t.get('id')}" ondragstart="drag(event)">
-                                
-                                <button class="btn-delete-task" 
-                                        th:onclick="'deleteTask(event, ' + ${t.get('id')} + ')'"
-                                        title="Eliminar tarea">×</button>
-
-                                <h4 th:text="${t.get('titulo')}">Título</h4>
-                                <p th:text="${t.get('descripcion')}">Desc</p>
-                                <small th:if="${t.get('fecha_formateada')}" 
-                                       th:text="'📅 ' + ${t.get('fecha_formateada')}">Fecha</small>
+                            <div th:each="t : ${tareasCompletadas}" class="task-card completed" draggable="true" th:id="'task-' + ${t['id']}" th:attr="data-id=${t['id']}" ondragstart="drag(event)">
+                                <button class="btn-delete-task" th:onclick="'deleteTask(event, ' + ${t['id']} + ')'">×</button>
+                                <h4 th:text="${t['titulo']}">Título</h4>
+                                <p th:text="${t['descripcion']}">Desc</p>
+                                <small th:if="${t['fecha_formateada']}" th:text="'📅 ' + ${t['fecha_formateada']}"></small>
                             </div>
                         </div>
                     </div>
@@ -150,75 +120,29 @@
     
     <div id="createTaskModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>✨ Nueva Tarea</h3>
-                <button class="close-btn" onclick="closeTaskModal()">×</button>
-            </div>
+            <div class="modal-header"><h3>✨ Nueva Tarea</h3><button class="close-btn" onclick="closeTaskModal()">×</button></div>
             <form id="createTaskForm" style="padding-top: 10px;">
                 <input type="hidden" id="t-estado">
-                <div class="form-group">
-                    <label for="t-titulo">Título de la tarea *</label>
-                    <input type="text" id="t-titulo" class="form-control" required 
-                           placeholder="Ej: Diseñar mockup" maxlength="100">
-                </div>
-                <div class="form-group">
-                    <label for="t-desc">Detalles</label>
-                    <textarea id="t-desc" class="form-control" rows="3" 
-                              placeholder="Describe la tarea..." maxlength="500"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="t-fecha">Fecha Límite</label>
-                    <input type="date" id="t-fecha" class="form-control">
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" id="btnCrearTarea">Añadir Tarea</button>
-                </div>
+                <div class="form-group"><label>Título</label><input type="text" id="t-titulo" class="form-control" required></div>
+                <div class="form-group"><label>Detalles</label><textarea id="t-desc" class="form-control" rows="3"></textarea></div>
+                <div class="form-group"><label>Fecha Límite</label><input type="date" id="t-fecha" class="form-control"></div>
+                <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancelar</button><button type="submit" class="btn btn-primary">Guardar</button></div>
             </form>
         </div>
     </div>
 
     <script th:inline="javascript">
-        const projectId = /*[[${proyecto.get('id')}]]*/ 0;
+        const projectId = /*[[${proyecto['id']}]]*/ 0;
         const JWT_TOKEN = /*[[${session.token}]]*/ '';
+        const CURRENT_USER_ID = /*[[${usuario.get('id')}]]*/ 0;
         const API_BASE_URL = 'http://localhost:8080/api';
-        
         async function authFetch(endpoint, options = {}) {
-            const headers = {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${JWT_TOKEN}`,
-                ...options.headers
-            };
+            const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${JWT_TOKEN}`, ...options.headers };
             return fetch(API_BASE_URL + endpoint, { ...options, headers });
         }
-
-        async function deleteTask(event, taskId) {
-            event.stopPropagation(); 
-
-            if (!confirm('¿Estás seguro de que quieres eliminar esta tarea irreversiblemente?')) {
-                return;
-            }
-
-            try {
-                const response = await authFetch(`/tareas/${taskId}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    const taskElement = document.getElementById(`task-${taskId}`);
-                    if (taskElement) {
-                        taskElement.remove();
-                    }
-                } else {
-                    alert('No se pudo eliminar la tarea. Inténtalo de nuevo.');
-                }
-            } catch (error) {
-                console.error('Error al eliminar tarea:', error);
-                alert('Error de conexión al intentar eliminar la tarea.');
-            }
-        }
     </script>
-    
     <script src="/js/board.js"></script>
+    <script src="/js/notifications.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', () => { if(typeof initNotifications === 'function') initNotifications(); });</script>
 </body>
 </html>
