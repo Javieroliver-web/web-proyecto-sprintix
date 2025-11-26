@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <title th:text="${proyecto.nombre} + ' - Tablero'">Tablero</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        /* Estilo rápido para el nuevo botón de logout en el header */
+        .logout-link {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .logout-link:hover {
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
     <div class="app-layout">
@@ -15,13 +28,16 @@
                     <li><a href="/proyectos" class="nav-link active">Proyectos</a></li>
                 </ul>
             </nav>
-            <div class="sidebar-footer"><a href="/logout"><img src="/img/exiticon.png" style="height:40px"></a></div>
-        </aside>
+            </aside>
 
         <main class="main-content">
             <header class="header">
                 <div class="search-bar"></div>
-                <div class="header-actions">
+                <div class="header-actions" style="display: flex; align-items: center;">
+                    <a href="/logout" class="logout-link" title="Cerrar sesión">
+                        <img src="/img/exiticon.png" style="height:28px" alt="Salir">
+                    </a>
+                    
                     <div class="user-profile">
                         <div class="user-avatar" th:text="${#strings.substring(usuario.nombre,0,1).toUpperCase()}">U</div>
                     </div>
@@ -93,7 +109,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>✨ Nueva Tarea</h3>
-                <button class="close-btn" onclick="closeTaskModal()">&times;</button>
+                <button class="close-btn" onclick="closeTaskModal()">×</button>
             </div>
             <form id="createTaskForm" style="padding-top: 10px;">
                 <input type="hidden" id="t-estado">
