@@ -47,8 +47,8 @@
                                  th:id="'task-' + ${t.id}" th:attr="data-id=${t.id}" ondragstart="drag(event)">
                                 <h4 th:text="${t.titulo}">Título</h4>
                                 <p th:text="${t.descripcion}">Desc</p>
-                                <small th:if="${t.fecha_limite}" 
-                                       th:text="'📅 ' + ${#strings.substring(t.fecha_limite, 8, 10) + '-' + #strings.substring(t.fecha_limite, 5, 7) + '-' + #strings.substring(t.fecha_limite, 0, 4)}">Fecha</small>
+                                <small th:if="${t.fecha_formateada}" 
+                                       th:text="'📅 ' + ${t.fecha_formateada}">Fecha</small>
                             </div>
                         </div>
                     </div>
@@ -63,8 +63,8 @@
                                  th:id="'task-' + ${t.id}" th:attr="data-id=${t.id}" ondragstart="drag(event)">
                                 <h4 th:text="${t.titulo}">Título</h4>
                                 <p th:text="${t.descripcion}">Desc</p>
-                                <small th:if="${t.fecha_limite}" 
-                                       th:text="'📅 ' + ${#strings.substring(t.fecha_limite, 8, 10) + '-' + #strings.substring(t.fecha_limite, 5, 7) + '-' + #strings.substring(t.fecha_limite, 0, 4)}">Fecha</small>
+                                <small th:if="${t.fecha_formateada}" 
+                                       th:text="'📅 ' + ${t.fecha_formateada}">Fecha</small>
                             </div>
                         </div>
                     </div>
@@ -79,8 +79,8 @@
                                  th:id="'task-' + ${t.id}" th:attr="data-id=${t.id}" ondragstart="drag(event)">
                                 <h4 th:text="${t.titulo}">Título</h4>
                                 <p th:text="${t.descripcion}">Desc</p>
-                                <small th:if="${t.fecha_limite}" 
-                                       th:text="'📅 ' + ${#strings.substring(t.fecha_limite, 8, 10) + '-' + #strings.substring(t.fecha_limite, 5, 7) + '-' + #strings.substring(t.fecha_limite, 0, 4)}">Fecha</small>
+                                <small th:if="${t.fecha_formateada}" 
+                                       th:text="'📅 ' + ${t.fecha_formateada}">Fecha</small>
                             </div>
                         </div>
                     </div>

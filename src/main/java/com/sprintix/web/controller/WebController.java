@@ -8,6 +8,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.text.SimpleDateFormat; // Importante
+import java.util.Date;           // Importante
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +33,6 @@ public class WebController {
                              @RequestParam String password, 
                              HttpSession session, 
                              Model model) {
-        // Validación básica
         if (email == null || email.trim().isEmpty() || 
             password == null || password.trim().isEmpty()) {
             model.addAttribute("error", "Email y contraseña son requeridos");
@@ -46,8 +47,7 @@ public class WebController {
             
             if (usuario != null) {
                 session.setAttribute("usuario", usuario);
-                // Configurar timeout de sesión (opcional)
-                session.setMaxInactiveInterval(3600); 
+                session.setMaxInactiveInterval(3600);
                 return "redirect:/dashboard";
             }
         }
@@ -71,17 +71,10 @@ public class WebController {
         String token = (String) session.getAttribute("token");
         Map usuario = (Map) session.getAttribute("usuario");
         
-        // Asegurarse de castear correctamente el ID (dependiendo de cómo venga el JSON, puede ser Integer o Double)
         int userId = (Integer) usuario.get("id");
-        
         Map dashboardData = apiService.getDashboard(userId, token);
 
-        if (dashboardData == null) {
-            model.addAttribute("error", "No se pudo cargar el dashboard");
-            // Podrías redirigir o mostrar página de error, pero 'dashboard' necesita 'stats'
-            // Para evitar error 500 si falla la API, pasamos un mapa vacío o manejamos el error
-            return "redirect:/logout"; 
-        }
+        if (dashboardData == null) return "redirect:/logout"; 
 
         model.addAttribute("usuario", usuario);
         model.addAttribute("stats", dashboardData);
@@ -89,7 +82,7 @@ public class WebController {
         return "dashboard";
     }
 
-    // --- PROYECTOS (FALTABA ESTE MÉTODO) ---
+    // --- PROYECTOS ---
     @GetMapping("/proyectos")
     public String proyectos(HttpSession session, Model model) {
         if (!isValidSession(session)) return "redirect:/";
@@ -104,7 +97,7 @@ public class WebController {
         return "proyectos";
     }
 
-    // --- BOARD / TABLERO (FALTABA ESTE MÉTODO) ---
+    // --- BOARD / TABLERO ---
     @GetMapping("/board")
     public String board(@RequestParam int id, HttpSession session, Model model) {
         if (!isValidSession(session)) return "redirect:/";
@@ -112,7 +105,6 @@ public class WebController {
         String token = (String) session.getAttribute("token");
         Map usuario = (Map) session.getAttribute("usuario");
 
-        // Llamada a la API para obtener proyecto y tareas
         Map<String, Object> data = apiService.getTableroData(id, token);
         
         if (data == null || data.get("proyecto") == null) {
@@ -123,9 +115,16 @@ public class WebController {
         model.addAttribute("usuario", usuario);
         model.addAttribute("proyecto", data.get("proyecto"));
         
-        // Clasificar tareas para las columnas
-        List<Map> tareas = (List<Map>) data.get("tareas");
+        List<Map<String, Object>> tareas = (List<Map<String, Object>>) data.get("tareas");
         
+        // === CORRECCIÓN: Formatear fechas aquí para evitar errores en el HTML ===
+        if (tareas != null) {
+            for (Map<String, Object> t : tareas) {
+                formatDateSafe(t);
+            }
+        }
+        // ========================================================================
+
         model.addAttribute("tareasPendientes", 
             tareas.stream().filter(t -> isStatus(t, "pendiente")).toList());
         model.addAttribute("tareasEnCurso", 
@@ -137,6 +136,37 @@ public class WebController {
     }
 
     // --- HELPERS ---
+
+    // Formatea la fecha de forma segura (maneja String, Long/Timestamp o Null)
+    private void formatDateSafe(Map<String, Object> tarea) {
+        Object fechaObj = tarea.get("fecha_limite");
+        if (fechaObj == null) return; // Si no hay fecha, no hacemos nada
+
+        String fechaStr = "";
+        try {
+            if (fechaObj instanceof String) {
+                String s = (String) fechaObj;
+                // Si es formato ISO (YYYY-MM-DD...), lo convertimos
+                if (s.length() >= 10) {
+                    fechaStr = s.substring(8, 10) + "-" + s.substring(5, 7) + "-" + s.substring(0, 4);
+                } else {
+                    fechaStr = s; // Si es raro, lo dejamos tal cual
+                }
+            } else if (fechaObj instanceof Number) {
+                // Si la API devuelve un Timestamp (número)
+                long ts = ((Number) fechaObj).longValue();
+                SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+                fechaStr = sdf.format(new Date(ts));
+            }
+            
+            // Guardamos la fecha lista para usar en el HTML
+            tarea.put("fecha_formateada", fechaStr);
+            
+        } catch (Exception e) {
+            // En caso de error, evitamos que la web se rompa
+            tarea.put("fecha_formateada", "Error fecha");
+        }
+    }
 
     private boolean isValidSession(HttpSession session) {
         return session.getAttribute("token") != null && 
