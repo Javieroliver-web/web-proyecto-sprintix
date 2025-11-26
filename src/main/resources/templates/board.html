@@ -2,10 +2,9 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title th:text="${proyecto.nombre} + ' - Tablero'">Tablero</title>
+    <title th:text="${proyecto.get('nombre')} + ' - Tablero'">Tablero</title>
     <link rel="stylesheet" href="/css/styles.css">
     <style>
-        /* Estilo rápido para el nuevo botón de logout en el header */
         .logout-link {
             display: flex;
             align-items: center;
@@ -15,6 +14,35 @@
         }
         .logout-link:hover {
             opacity: 1;
+        }
+
+        .task-card {
+            position: relative;
+            padding-top: 25px; /* Espacio para que el texto no choque con el botón */
+        }
+
+        /* BOTÓN ELIMINAR A LA DERECHA */
+        .btn-delete-task {
+            position: absolute;
+            top: 5px;
+            right: 5px; /* DERECHA */
+            background: none;
+            border: none;
+            color: #ff4444;
+            font-size: 1.4rem;
+            line-height: 0.8;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: all 0.2s;
+            padding: 2px 4px;
+            border-radius: 4px;
+            z-index: 10;
+        }
+
+        .btn-delete-task:hover {
+            opacity: 1;
+            background-color: #ffecec;
         }
     </style>
 </head>
@@ -28,7 +56,7 @@
                     <li><a href="/proyectos" class="nav-link active">Proyectos</a></li>
                 </ul>
             </nav>
-            </aside>
+        </aside>
 
         <main class="main-content">
             <header class="header">
@@ -39,7 +67,7 @@
                     </a>
                     
                     <div class="user-profile">
-                        <div class="user-avatar" th:text="${#strings.substring(usuario.nombre,0,1).toUpperCase()}">U</div>
+                        <div class="user-avatar" th:text="${usuario != null ? #strings.substring(usuario.nombre,0,1).toUpperCase() : 'U'}">U</div>
                     </div>
                 </div>
             </header>
@@ -48,7 +76,7 @@
                 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <button class="btn btn-secondary" onclick="location.href='/proyectos'">← Volver</button>
-                        <h2 th:text="${proyecto.nombre}">Nombre Proyecto</h2>
+                        <h2 th:text="${proyecto.get('nombre')}">Nombre Proyecto</h2>
                     </div>
                 </div>
 
@@ -60,11 +88,16 @@
                         </div>
                         <div class="column-content" id="col-pendiente">
                             <div th:each="t : ${tareasPendientes}" class="task-card" draggable="true" 
-                                 th:id="'task-' + ${t.id}" th:attr="data-id=${t.id}" ondragstart="drag(event)">
-                                <h4 th:text="${t.titulo}">Título</h4>
-                                <p th:text="${t.descripcion}">Desc</p>
-                                <small th:if="${t.fecha_formateada}" 
-                                       th:text="'📅 ' + ${t.fecha_formateada}">Fecha</small>
+                                 th:id="'task-' + ${t.get('id')}" th:attr="data-id=${t.get('id')}" ondragstart="drag(event)">
+                                
+                                <button class="btn-delete-task" 
+                                        th:onclick="'deleteTask(event, ' + ${t.get('id')} + ')'"
+                                        title="Eliminar tarea">×</button>
+                                
+                                <h4 th:text="${t.get('titulo')}">Título</h4>
+                                <p th:text="${t.get('descripcion')}">Desc</p>
+                                <small th:if="${t.get('fecha_formateada')}" 
+                                       th:text="'📅 ' + ${t.get('fecha_formateada')}">Fecha</small>
                             </div>
                         </div>
                     </div>
@@ -76,11 +109,16 @@
                         </div>
                         <div class="column-content" id="col-en_progreso">
                             <div th:each="t : ${tareasEnCurso}" class="task-card" draggable="true" 
-                                 th:id="'task-' + ${t.id}" th:attr="data-id=${t.id}" ondragstart="drag(event)">
-                                <h4 th:text="${t.titulo}">Título</h4>
-                                <p th:text="${t.descripcion}">Desc</p>
-                                <small th:if="${t.fecha_formateada}" 
-                                       th:text="'📅 ' + ${t.fecha_formateada}">Fecha</small>
+                                 th:id="'task-' + ${t.get('id')}" th:attr="data-id=${t.get('id')}" ondragstart="drag(event)">
+                                
+                                <button class="btn-delete-task" 
+                                        th:onclick="'deleteTask(event, ' + ${t.get('id')} + ')'"
+                                        title="Eliminar tarea">×</button>
+
+                                <h4 th:text="${t.get('titulo')}">Título</h4>
+                                <p th:text="${t.get('descripcion')}">Desc</p>
+                                <small th:if="${t.get('fecha_formateada')}" 
+                                       th:text="'📅 ' + ${t.get('fecha_formateada')}">Fecha</small>
                             </div>
                         </div>
                     </div>
@@ -92,11 +130,16 @@
                         </div>
                         <div class="column-content" id="col-completada">
                             <div th:each="t : ${tareasCompletadas}" class="task-card completed" draggable="true" 
-                                 th:id="'task-' + ${t.id}" th:attr="data-id=${t.id}" ondragstart="drag(event)">
-                                <h4 th:text="${t.titulo}">Título</h4>
-                                <p th:text="${t.descripcion}">Desc</p>
-                                <small th:if="${t.fecha_formateada}" 
-                                       th:text="'📅 ' + ${t.fecha_formateada}">Fecha</small>
+                                 th:id="'task-' + ${t.get('id')}" th:attr="data-id=${t.get('id')}" ondragstart="drag(event)">
+                                
+                                <button class="btn-delete-task" 
+                                        th:onclick="'deleteTask(event, ' + ${t.get('id')} + ')'"
+                                        title="Eliminar tarea">×</button>
+
+                                <h4 th:text="${t.get('titulo')}">Título</h4>
+                                <p th:text="${t.get('descripcion')}">Desc</p>
+                                <small th:if="${t.get('fecha_formateada')}" 
+                                       th:text="'📅 ' + ${t.get('fecha_formateada')}">Fecha</small>
                             </div>
                         </div>
                     </div>
@@ -136,7 +179,7 @@
     </div>
 
     <script th:inline="javascript">
-        const projectId = /*[[${proyecto.id}]]*/ 0;
+        const projectId = /*[[${proyecto.get('id')}]]*/ 0;
         const JWT_TOKEN = /*[[${session.token}]]*/ '';
         const API_BASE_URL = 'http://localhost:8080/api';
         
@@ -147,6 +190,32 @@
                 ...options.headers
             };
             return fetch(API_BASE_URL + endpoint, { ...options, headers });
+        }
+
+        async function deleteTask(event, taskId) {
+            event.stopPropagation(); 
+
+            if (!confirm('¿Estás seguro de que quieres eliminar esta tarea irreversiblemente?')) {
+                return;
+            }
+
+            try {
+                const response = await authFetch(`/tareas/${taskId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    const taskElement = document.getElementById(`task-${taskId}`);
+                    if (taskElement) {
+                        taskElement.remove();
+                    }
+                } else {
+                    alert('No se pudo eliminar la tarea. Inténtalo de nuevo.');
+                }
+            } catch (error) {
+                console.error('Error al eliminar tarea:', error);
+                alert('Error de conexión al intentar eliminar la tarea.');
+            }
         }
     </script>
     

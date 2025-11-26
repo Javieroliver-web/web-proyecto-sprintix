@@ -8,8 +8,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.text.SimpleDateFormat; // Importante
-import java.util.Date;           // Importante
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -19,7 +19,6 @@ public class WebController {
     @Autowired
     private ApiService apiService;
 
-    // --- LOGIN ---
     @GetMapping({"/", "/login", "/index.html"})
     public String loginPage(HttpSession session, Model model) {
         if (session.getAttribute("token") != null) {
@@ -63,7 +62,6 @@ public class WebController {
         return "redirect:/";
     }
 
-    // --- DASHBOARD ---
     @GetMapping({"/dashboard", "/dashboard.html"})
     public String dashboard(HttpSession session, Model model) {
         if (!isValidSession(session)) return "redirect:/";
@@ -82,7 +80,6 @@ public class WebController {
         return "dashboard";
     }
 
-    // --- PROYECTOS ---
     @GetMapping("/proyectos")
     public String proyectos(HttpSession session, Model model) {
         if (!isValidSession(session)) return "redirect:/";
@@ -97,7 +94,6 @@ public class WebController {
         return "proyectos";
     }
 
-    // --- BOARD / TABLERO ---
     @GetMapping("/board")
     public String board(@RequestParam int id, HttpSession session, Model model) {
         if (!isValidSession(session)) return "redirect:/";
@@ -117,13 +113,12 @@ public class WebController {
         
         List<Map<String, Object>> tareas = (List<Map<String, Object>>) data.get("tareas");
         
-        // === CORRECCIÓN: Formatear fechas aquí para evitar errores en el HTML ===
+        // Procesa las fechas aquí para que el HTML solo tenga que imprimir texto
         if (tareas != null) {
             for (Map<String, Object> t : tareas) {
                 formatDateSafe(t);
             }
         }
-        // ========================================================================
 
         model.addAttribute("tareasPendientes", 
             tareas.stream().filter(t -> isStatus(t, "pendiente")).toList());
@@ -135,35 +130,26 @@ public class WebController {
         return "board";
     }
 
-    // --- HELPERS ---
-
-    // Formatea la fecha de forma segura (maneja String, Long/Timestamp o Null)
     private void formatDateSafe(Map<String, Object> tarea) {
         Object fechaObj = tarea.get("fecha_limite");
-        if (fechaObj == null) return; // Si no hay fecha, no hacemos nada
+        if (fechaObj == null) return;
 
         String fechaStr = "";
         try {
             if (fechaObj instanceof String) {
                 String s = (String) fechaObj;
-                // Si es formato ISO (YYYY-MM-DD...), lo convertimos
                 if (s.length() >= 10) {
                     fechaStr = s.substring(8, 10) + "-" + s.substring(5, 7) + "-" + s.substring(0, 4);
                 } else {
-                    fechaStr = s; // Si es raro, lo dejamos tal cual
+                    fechaStr = s;
                 }
             } else if (fechaObj instanceof Number) {
-                // Si la API devuelve un Timestamp (número)
                 long ts = ((Number) fechaObj).longValue();
                 SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
                 fechaStr = sdf.format(new Date(ts));
             }
-            
-            // Guardamos la fecha lista para usar en el HTML
             tarea.put("fecha_formateada", fechaStr);
-            
         } catch (Exception e) {
-            // En caso de error, evitamos que la web se rompa
             tarea.put("fecha_formateada", "Error fecha");
         }
     }
