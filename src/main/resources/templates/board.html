@@ -7,34 +7,19 @@
     <style>
         .logout-link { display: flex; align-items: center; margin-right: 15px; opacity: 0.7; transition: opacity 0.2s; }
         .logout-link:hover { opacity: 1; }
-
-        /* Tareas */
-        .task-card { 
-            position: relative; padding: 15px; 
-            cursor: pointer; /* Indica que es clicable */
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .task-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        /* Notificaciones */
+        .task-card { position: relative; padding: 15px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .task-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .notification-wrapper { position: relative; margin-right: 20px; display: flex; align-items: center; }
         .header-icon { height: 28px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s; }
         .header-icon:hover { opacity: 1; }
         .badge-count { position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; font-size: 0.65rem; padding: 2px 5px; border-radius: 10px; min-width: 16px; text-align: center; font-weight: bold; border: 2px solid #e6e6e6; pointer-events: none; }
-        
         .notif-dropdown { display: none; position: absolute; top: 45px; right: -80px; width: 300px; background: white; border: 1px solid #e0e0e0; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-radius: 8px; z-index: 2000; flex-direction: column; overflow: hidden; }
         .notif-dropdown.show { display: flex; animation: fadeIn 0.2s ease; }
         .notif-header { padding: 12px 15px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .notif-list { max-height: 300px; overflow-y: auto; background: #fff; }
         .notif-item { padding: 12px 15px; border-bottom: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: start; }
         .btn-close-notif { border: none; background: none; color: #ccc; cursor: pointer; margin-left: 10px; }
-        
-        /* Estilos para mensajes vacíos */
         .empty-msg { text-align: center; color: #888; font-style: italic; padding: 20px; border: 2px dashed #ddd; border-radius: 6px; margin-top: 10px; pointer-events: none; }
-
         @keyframes fadeIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
     </style>
 </head>
@@ -87,12 +72,11 @@
                         <div class="column-header"><span>📋 Por hacer</span> <button class="btn-icon-add" onclick="openTaskModal('pendiente')">+</button></div>
                         <div class="column-content" id="col-pendiente">
                             <div class="empty-msg" th:if="${#lists.isEmpty(tareasPendientes)}" id="empty-pendiente">No hay tareas</div>
-                            
                             <div th:each="t : ${tareasPendientes}" class="task-card" draggable="true" 
                                  th:id="'task-' + ${t.get('id')}" 
                                  th:attr="data-id=${t.get('id')}, data-title=${t.get('titulo')}, data-desc=${t.get('descripcion')}, data-date=${t.get('fecha_formateada')}, data-status='Pendiente'"
-                                 ondragstart="drag(event)"
-                                 onclick="openViewTaskModal(this)"> <h4 th:text="${t.get('titulo')}">Título</h4>
+                                 ondragstart="drag(event)" onclick="openViewTaskModal(this)">
+                                <h4 th:text="${t.get('titulo')}">Título</h4>
                                 <p th:text="${t.get('descripcion')}">Desc</p>
                                 <small th:if="${t.get('fecha_formateada')}" th:text="'📅 ' + ${t.get('fecha_formateada')}"></small>
                             </div>
@@ -103,13 +87,10 @@
                         <div class="column-header"><span>⚙️ En curso</span> <button class="btn-icon-add" onclick="openTaskModal('en_progreso')">+</button></div>
                         <div class="column-content" id="col-en_progreso">
                             <div class="empty-msg" th:if="${#lists.isEmpty(tareasEnCurso)}" id="empty-en_progreso">No hay tareas</div>
-                            
                             <div th:each="t : ${tareasEnCurso}" class="task-card" draggable="true" 
                                  th:id="'task-' + ${t.get('id')}" 
                                  th:attr="data-id=${t.get('id')}, data-title=${t.get('titulo')}, data-desc=${t.get('descripcion')}, data-date=${t.get('fecha_formateada')}, data-status='En Curso'"
-                                 ondragstart="drag(event)"
-                                 onclick="openViewTaskModal(this)">
-                                
+                                 ondragstart="drag(event)" onclick="openViewTaskModal(this)">
                                 <h4 th:text="${t.get('titulo')}">Título</h4>
                                 <p th:text="${t.get('descripcion')}">Desc</p>
                                 <small th:if="${t.get('fecha_formateada')}" th:text="'📅 ' + ${t.get('fecha_formateada')}"></small>
@@ -121,13 +102,10 @@
                         <div class="column-header"><span>✅ Listo</span> <button class="btn-icon-add" onclick="openTaskModal('completada')">+</button></div>
                         <div class="column-content" id="col-completada">
                             <div class="empty-msg" th:if="${#lists.isEmpty(tareasCompletadas)}" id="empty-completada">No hay tareas</div>
-                            
                             <div th:each="t : ${tareasCompletadas}" class="task-card completed" draggable="true" 
                                  th:id="'task-' + ${t.get('id')}" 
                                  th:attr="data-id=${t.get('id')}, data-title=${t.get('titulo')}, data-desc=${t.get('descripcion')}, data-date=${t.get('fecha_formateada')}, data-status='Completada'"
-                                 ondragstart="drag(event)"
-                                 onclick="openViewTaskModal(this)">
-                                
+                                 ondragstart="drag(event)" onclick="openViewTaskModal(this)">
                                 <h4 th:text="${t.get('titulo')}">Título</h4>
                                 <p th:text="${t.get('descripcion')}">Desc</p>
                                 <small th:if="${t.get('fecha_formateada')}" th:text="'📅 ' + ${t.get('fecha_formateada')}"></small>
@@ -172,18 +150,68 @@
         </div>
     </div>
 
+    <!-- ⭐⭐⭐ SOLUCIÓN: Definir las variables GLOBALMENTE ANTES de cargar scripts ⭐⭐⭐ -->
     <script th:inline="javascript">
-        const projectId = /*[[${proyecto.get('id')}]]*/ 0;
-        const JWT_TOKEN = /*[[${session.token}]]*/ '';
-        const CURRENT_USER_ID = /*[[${usuario.get('id')}]]*/ 0;
-        const API_BASE_URL = 'http://localhost:8080/api';
+        /*<![CDATA[*/
+        var projectId = /*[[${proyecto.get('id')}]]*/ 0;
+        var JWT_TOKEN = '/*[[${token}]]*/' || '';
+        var CURRENT_USER_ID = /*[[${userId}]]*/ 0;
+        var API_BASE_URL = 'http://localhost:8080/api';
+        
+        // Hacer las variables globales explícitamente
+        window.projectId = projectId;
+        window.JWT_TOKEN = JWT_TOKEN;
+        window.CURRENT_USER_ID = CURRENT_USER_ID;
+        window.API_BASE_URL = API_BASE_URL;
+        
+        // ⭐ DEBUGGING MEJORADO
+        console.log('🔧 Variables globales inyectadas (Board):');
+        console.log('   - Project ID:', projectId, '(tipo:', typeof projectId, ')');
+        console.log('   - User ID:', CURRENT_USER_ID, '(tipo:', typeof CURRENT_USER_ID, ')');
+        console.log('   - Token:', JWT_TOKEN ? `${JWT_TOKEN.substring(0, 20)}... (${JWT_TOKEN.length} chars)` : '❌ VACÍO');
+        console.log('   - API URL:', API_BASE_URL);
+        
+        // ⭐ VALIDACIÓN CRÍTICA
+        if (!CURRENT_USER_ID || CURRENT_USER_ID === 0) {
+            console.error('❌ CURRENT_USER_ID no está definido. Valor recibido:', CURRENT_USER_ID);
+            console.error('   El backend no está pasando userId correctamente');
+        }
+        if (!JWT_TOKEN || JWT_TOKEN === '') {
+            console.error('❌ JWT_TOKEN no está definido. Valor recibido:', JWT_TOKEN);
+            console.error('   El backend no está pasando token correctamente');
+        }
+        
+        // Función auxiliar para peticiones autenticadas
         async function authFetch(endpoint, options = {}) {
-            const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${JWT_TOKEN}`, ...options.headers };
+            if (!JWT_TOKEN) {
+                console.error('❌ No se puede hacer petición: token no disponible');
+                return null;
+            }
+            const headers = { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${JWT_TOKEN}`, 
+                ...options.headers 
+            };
             return fetch(API_BASE_URL + endpoint, { ...options, headers });
         }
+        /*]]>*/
     </script>
+    
+    <!-- Cargar scripts DESPUÉS de definir las variables -->
     <script src="/js/board.js"></script>
     <script src="/js/notifications.js"></script>
-    <script>document.addEventListener('DOMContentLoaded', () => { if(typeof initNotifications === 'function') initNotifications(); });</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => { 
+            console.log('📄 DOM cargado en board.html');
+            console.log('   - initNotifications disponible:', typeof initNotifications !== 'undefined');
+            
+            if(typeof initNotifications === 'function') {
+                console.log('🚀 Inicializando notificaciones...');
+                initNotifications(); 
+            } else {
+                console.error('❌ initNotifications no está definida');
+            }
+        });
+    </script>
 </body>
 </html>

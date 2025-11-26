@@ -31,7 +31,15 @@ public class WebController {
         String token = apiService.login(email, password);
         if (token != null) {
             session.setAttribute("token", token);
-            session.setAttribute("usuario", apiService.getMe(token));
+            Map usuario = apiService.getMe(token);
+            session.setAttribute("usuario", usuario);
+            
+            // ⭐ DEBUGGING: Verifica que los datos estén en sesión
+            System.out.println("✅ Login exitoso:");
+            System.out.println("   - Token: " + token.substring(0, 20) + "...");
+            System.out.println("   - Usuario ID: " + usuario.get("id"));
+            System.out.println("   - Usuario Nombre: " + usuario.get("nombre"));
+            
             return "redirect:/dashboard";
         }
         model.addAttribute("error", "Credenciales inválidas");
@@ -48,21 +56,39 @@ public class WebController {
     @GetMapping("/dashboard")
     public String dashboard(HttpSession session, Model model) {
         if (!isValidSession(session)) return "redirect:/";
+        
         String token = (String) session.getAttribute("token");
         Map usuario = (Map) session.getAttribute("usuario");
         
+        // ⭐ ASEGURAR QUE LAS VARIABLES SE PASEN CORRECTAMENTE
         int userId = ((Number) usuario.get("id")).intValue();
+        
         model.addAttribute("usuario", usuario);
+        model.addAttribute("userId", userId); // ⭐ NUEVO: Pasar explícitamente
+        model.addAttribute("token", token);   // ⭐ NUEVO: Pasar explícitamente
         model.addAttribute("stats", apiService.getDashboard(userId, token));
+        
+        // ⭐ DEBUGGING
+        System.out.println("📊 Dashboard cargado:");
+        System.out.println("   - User ID: " + userId);
+        System.out.println("   - Token presente: " + (token != null));
+        
         return "dashboard";
     }
 
     @GetMapping("/proyectos")
     public String proyectos(HttpSession session, Model model) {
         if (!isValidSession(session)) return "redirect:/";
+        
         String token = (String) session.getAttribute("token");
-        model.addAttribute("usuario", session.getAttribute("usuario"));
+        Map usuario = (Map) session.getAttribute("usuario");
+        int userId = ((Number) usuario.get("id")).intValue();
+        
+        model.addAttribute("usuario", usuario);
+        model.addAttribute("userId", userId);  // ⭐ NUEVO
+        model.addAttribute("token", token);    // ⭐ NUEVO
         model.addAttribute("proyectos", apiService.getProyectos(token));
+        
         return "proyectos";
     }
 
@@ -72,6 +98,7 @@ public class WebController {
 
         String token = (String) session.getAttribute("token");
         Map usuario = (Map) session.getAttribute("usuario");
+        int userId = ((Number) usuario.get("id")).intValue();
 
         Map<String, Object> data = apiService.getTableroData(id, token);
         
@@ -80,13 +107,14 @@ public class WebController {
         }
 
         model.addAttribute("usuario", usuario);
+        model.addAttribute("userId", userId);  // ⭐ NUEVO
+        model.addAttribute("token", token);    // ⭐ NUEVO
         model.addAttribute("proyecto", data.get("proyecto"));
         
         List<Map<String, Object>> tareas = (List<Map<String, Object>>) data.get("tareas");
         
         if (tareas != null) {
             for (Map<String, Object> t : tareas) {
-                // === CRÍTICO: ESTO EVITA QUE LAS TAREAS DESAPAREZCAN ===
                 limpiarDatosTarea(t); 
                 formatDateSafe(t);
             }
