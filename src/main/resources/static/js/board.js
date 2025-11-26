@@ -1,236 +1,151 @@
 // src/main/resources/static/js/board.js
 
-console.log('✅ board.js cargado');
+// --- Helper UI Vacía ---
+function checkEmptyState(colId) {
+    const col = document.getElementById(`col-${colId}`);
+    if (!col) return;
+    const tasks = col.querySelectorAll('.task-card');
+    let msg = col.querySelector('.empty-msg');
+    if (!msg) {
+        msg = document.createElement('div');
+        msg.className = 'empty-msg';
+        msg.innerText = 'No hay tareas';
+        col.prepend(msg);
+    }
+    msg.style.display = (tasks.length === 0) ? 'block' : 'none';
+}
 
-// --- Notificaciones Automáticas ---
+// --- Notificaciones ---
 async function sendNotification(mensaje, tipo = 'info') {
     const userId = window.CURRENT_USER_ID;
-    const token = window.JWT_TOKEN;
-    const apiUrl = window.API_BASE_URL || 'http://localhost:8080/api';
-    
-    if (!userId || !token) {
-        console.warn('⚠️ No se puede enviar notificación: sin usuario o token');
-        return;
-    }
-    
+    if (!userId) return;
     try {
-        console.log(`📤 Enviando notificación: ${mensaje}`);
-        
-        const response = await fetch(`${apiUrl}/notificaciones`, {
+        await authFetch('/notificaciones', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-                mensaje: mensaje, 
-                tipo: tipo, 
-                usuario_id: userId 
-            })
+            body: JSON.stringify({ mensaje: mensaje, tipo: tipo, usuario_id: userId })
         });
-        
-        if (response.ok) {
-            console.log('✅ Notificación enviada');
-            // Recargar notificaciones si la función existe
-            if (typeof loadNotifications === 'function') {
-                await loadNotifications();
-            }
-        }
-    } catch (e) { 
-        console.error('❌ Error enviando notificación:', e); 
-    }
+        if(typeof loadNotifications === 'function') loadNotifications();
+    } catch (e) { console.error(e); }
 }
 
 // --- Drag & Drop ---
 function drag(ev) {
     ev.dataTransfer.setData("text/plain", ev.target.dataset.id);
+    ev.dataTransfer.setData("origin-col", ev.target.closest('.column-content').id.replace('col-', ''));
     ev.dataTransfer.effectAllowed = "move";
     ev.target.classList.add('dragging');
-    console.log(`🎯 Arrastrando tarea: ${ev.target.dataset.id}`);
 }
-
-window.allowDrop = (e) => { 
-    e.preventDefault(); 
-}
+window.allowDrop = (e) => { e.preventDefault(); }
 
 window.dropTask = async (e, nuevoEstado) => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('text/plain');
-    const card = document.getElementById(`task-${taskId}`);
+    const origen = e.dataTransfer.getData('origin-col');
     
-    if (!card) {
-        console.error(`❌ No se encontró la tarea ${taskId}`);
-        return;
-    }
+    const card = document.getElementById(`task-${taskId}`);
+    if (!card) return;
     
     card.classList.remove('dragging');
-    
-    console.log(`📦 Moviendo tarea ${taskId} a: ${nuevoEstado}`);
-    
-    // Mover visualmente primero
-    const targetColumn = document.getElementById(`col-${nuevoEstado}`);
-    if (targetColumn) {
-        targetColumn.appendChild(card);
-    }
-    
-    // Actualizar en el servidor
-    const token = window.JWT_TOKEN;
-    const apiUrl = window.API_BASE_URL || 'http://localhost:8080/api';
-    
+    document.getElementById(`col-${nuevoEstado}`).appendChild(card);
+
+    checkEmptyState(origen);
+    checkEmptyState(nuevoEstado);
+
     try {
-        const response = await fetch(`${apiUrl}/tareas/${taskId}`, {
+        const res = await authFetch(`/tareas/${taskId}`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({ estado: nuevoEstado })
         });
-        
-        if (response.ok) {
-            console.log(`✅ Tarea ${taskId} actualizada`);
-            
+        if (res.ok) {
             let estadoTexto = nuevoEstado === 'en_progreso' ? 'En Curso' : 
                               nuevoEstado === 'completada' ? 'Completada' : 'Pendiente';
             let tipo = nuevoEstado === 'completada' ? 'exito' : 'info';
-            
-            await sendNotification(`Tarea movida a: ${estadoTexto}`, tipo);
+            sendNotification(`Tarea movida a: ${estadoTexto}`, tipo);
         } else { 
-            console.error(`❌ Error al mover tarea: ${response.status}`);
-            alert("Error al mover la tarea. Recargando...");
-            window.location.reload(); 
+            alert("Error al mover. Recargando..."); window.location.reload(); 
         }
-    } catch (error) { 
-        console.error('❌ Error de conexión:', error);
-        alert("Error de conexión. Recargando...");
-        window.location.reload(); 
-    }
+    } catch (error) { window.location.reload(); }
 };
 
-// --- Modales ---
+// --- MODAL DE DETALLES Y ELIMINACIÓN (NUEVO) ---
+window.openViewTaskModal = function(card) {
+    const modal = document.getElementById('viewTaskModal');
+    const btnDelete = document.getElementById('btn-delete-modal');
+    
+    // Rellenar datos desde los atributos data-*
+    document.getElementById('view-title').innerText = card.dataset.title;
+    document.getElementById('view-desc').innerText = card.dataset.desc || 'Sin descripción';
+    document.getElementById('view-date').innerText = card.dataset.date || 'Sin fecha';
+    document.getElementById('view-status').innerText = card.dataset.status;
+
+    // Configurar botón eliminar
+    const taskId = card.dataset.id;
+    btnDelete.onclick = function(e) {
+        deleteTask(e, taskId);
+    };
+
+    modal.classList.add('show');
+}
+
+window.closeViewModal = function() {
+    document.getElementById('viewTaskModal').classList.remove('show');
+}
+
+// --- Modal Crear ---
 const modal = document.getElementById('createTaskModal');
 const form = document.getElementById('createTaskForm');
 
 window.openTaskModal = function(estadoDefault) {
     if (modal) {
-        console.log(`📝 Abriendo modal para estado: ${estadoDefault}`);
         document.getElementById('t-estado').value = estadoDefault;
         modal.classList.add('show');
-        setTimeout(() => {
-            const tituloInput = document.getElementById('t-titulo');
-            if (tituloInput) tituloInput.focus();
-        }, 100);
-    } else {
-        console.error('❌ No se encontró el modal createTaskModal');
+        setTimeout(() => document.getElementById('t-titulo').focus(), 100);
     }
 }
-
 window.closeTaskModal = function() {
-    if (modal) { 
-        modal.classList.remove('show'); 
-        if (form) form.reset(); 
-    }
+    if (modal) { modal.classList.remove('show'); if (form) form.reset(); }
 }
-
-// Cerrar modal al hacer clic fuera
 window.onclick = function(event) { 
-    if (event.target == modal) {
-        closeTaskModal();
-    }
+    if (event.target == modal) closeTaskModal();
+    if (event.target == document.getElementById('viewTaskModal')) closeViewModal();
 }
 
 if (form) {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
         const titulo = document.getElementById('t-titulo').value;
         const desc = document.getElementById('t-desc').value;
         const estado = document.getElementById('t-estado').value;
         const fecha = document.getElementById('t-fecha').value;
 
-        if (!titulo.trim()) {
-            alert('⚠️ El título es obligatorio');
-            return;
-        }
-
-        const newTask = { 
-            titulo: titulo.trim(), 
-            descripcion: desc.trim(), 
-            estado: estado, 
-            fecha_limite: fecha || null, 
-            proyecto_id: parseInt(projectId) 
-        };
-
-        console.log('📤 Creando nueva tarea:', newTask);
-        
-        const token = window.JWT_TOKEN;
-        const apiUrl = window.API_BASE_URL || 'http://localhost:8080/api';
+        const newTask = { titulo: titulo, descripcion: desc, estado: estado, fecha_limite: fecha || null, proyecto_id: parseInt(projectId) };
 
         try {
-            const response = await fetch(`${apiUrl}/tareas`, { 
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(newTask)
-            });
-            
-            if (response.ok) {
-                console.log('✅ Tarea creada exitosamente');
+            const res = await authFetch('/tareas', { method: 'POST', body: JSON.stringify(newTask) });
+            if (res && res.ok) {
                 await sendNotification(`Nueva tarea creada: ${titulo}`, 'info');
                 closeTaskModal();
                 window.location.reload(); 
-            } else { 
-                const errorText = await response.text();
-                console.error('❌ Error al crear tarea:', errorText);
-                alert('Error al crear tarea: ' + errorText);
-            }
-        } catch (error) { 
-            console.error('❌ Error de conexión:', error);
-            alert('Error de conexión.');
-        }
+            } else { alert('Error al crear tarea'); }
+        } catch (error) { alert('Error de conexión.'); }
     });
-} else {
-    console.warn('⚠️ Formulario createTaskForm no encontrado');
 }
 
 window.deleteTask = async function(event, taskId) {
     event.stopPropagation(); 
-    
-    if (!confirm('¿Eliminar esta tarea?')) return;
-    
-    console.log(`🗑️ Eliminando tarea ${taskId}`);
-    
-    const token = window.JWT_TOKEN;
-    const apiUrl = window.API_BASE_URL || 'http://localhost:8080/api';
+    if (!confirm('¿Estás seguro de que quieres eliminar esta tarea?')) return;
     
     try {
-        const response = await fetch(`${apiUrl}/tareas/${taskId}`, { 
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            console.log(`✅ Tarea ${taskId} eliminada`);
-            const taskElement = document.getElementById(`task-${taskId}`);
-            if (taskElement) {
-                taskElement.remove();
-            }
-            await sendNotification(`Tarea eliminada`, 'alerta');
-        } else {
-            console.error(`❌ Error al eliminar: ${response.status}`);
-            alert('Error al eliminar la tarea');
+        const res = await authFetch(`/tareas/${taskId}`, { method: 'DELETE' });
+        if (res.ok) {
+            const card = document.getElementById(`task-${taskId}`);
+            const colId = card.closest('.column-content').id.replace('col-', '');
+            
+            card.remove();
+            checkEmptyState(colId);
+            
+            closeViewModal(); // Cerrar el modal de detalles si estaba abierto
+            sendNotification(`Tarea eliminada`, 'alerta');
         }
-    } catch (error) { 
-        console.error('❌ Error:', error);
-        alert('Error de conexión');
-    }
+    } catch (error) { console.error(error); }
 }
-
-console.log('🎯 board.js inicializado correctamente');
-console.log('   - Project ID:', typeof projectId !== 'undefined' ? projectId : 'No definido');
-console.log('   - Token:', typeof JWT_TOKEN !== 'undefined' && JWT_TOKEN ? 'Presente' : 'Ausente');

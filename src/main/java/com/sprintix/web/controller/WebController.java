@@ -84,66 +84,38 @@ public class WebController {
         
         List<Map<String, Object>> tareas = (List<Map<String, Object>>) data.get("tareas");
         
-        // 🔍 LOGS DE DEPURACIÓN
-        System.out.println("📋 Total tareas recibidas: " + (tareas != null ? tareas.size() : 0));
-        
         if (tareas != null) {
-            tareas.forEach(t -> {
-                System.out.println("  - Tarea: " + t.get("titulo") + " | Estado: " + t.get("estado"));
+            for (Map<String, Object> t : tareas) {
+                // === CRÍTICO: ESTO EVITA QUE LAS TAREAS DESAPAREZCAN ===
+                limpiarDatosTarea(t); 
                 formatDateSafe(t);
-            });
+            }
             
-            List<Map<String, Object>> pendientes = filtrarPorEstado(tareas, "pendiente");
-            List<Map<String, Object>> enCurso = filtrarPorEstado(tareas, "en_progreso");
-            List<Map<String, Object>> completadas = filtrarPorEstado(tareas, "completada");
-            
-            System.out.println("✅ Pendientes: " + pendientes.size());
-            System.out.println("⚙️ En Curso: " + enCurso.size());
-            System.out.println("🎯 Completadas: " + completadas.size());
-            
-            model.addAttribute("tareasPendientes", pendientes);
-            model.addAttribute("tareasEnCurso", enCurso);
-            model.addAttribute("tareasCompletadas", completadas);
-        } else {
-            model.addAttribute("tareasPendientes", List.of());
-            model.addAttribute("tareasEnCurso", List.of());
-            model.addAttribute("tareasCompletadas", List.of());
+            model.addAttribute("tareasPendientes", filtrarPorEstado(tareas, "pendiente"));
+            model.addAttribute("tareasEnCurso", filtrarPorEstado(tareas, "en_progreso"));
+            model.addAttribute("tareasCompletadas", filtrarPorEstado(tareas, "completada"));
         }
 
         return "board";
     }
 
-    // --- HELPERS ROBUSTOS ---
+    // --- HELPERS ---
     
+    private void limpiarDatosTarea(Map<String, Object> t) {
+        if (!t.containsKey("titulo") || t.get("titulo") == null) t.put("titulo", "Sin título");
+        if (!t.containsKey("descripcion") || t.get("descripcion") == null) t.put("descripcion", "");
+    }
+
     private List<Map<String, Object>> filtrarPorEstado(List<Map<String, Object>> tareas, String estadoBuscado) {
-        if (tareas == null) return List.of();
-        
         return tareas.stream().filter(t -> {
             Object estadoObj = t.get("estado");
             if (estadoObj == null) return false;
-            
-            // Normalizamos: minúsculas y sin espacios extra
             String estado = estadoObj.toString().toLowerCase().trim();
             
-            // Mapeo más robusto de estados
-            switch (estadoBuscado.toLowerCase()) {
-                case "pendiente":
-                    return estado.equals("pendiente") || 
-                           estado.equals("por hacer") || 
-                           estado.equals("por_hacer");
-                case "en_progreso":
-                    return estado.equals("en_progreso") || 
-                           estado.equals("en curso") || 
-                           estado.equals("en progreso") || 
-                           estado.equals("en_curso");
-                case "completada":
-                    return estado.equals("completada") || 
-                           estado.equals("completado") || 
-                           estado.equals("listo") || 
-                           estado.equals("finalizada");
-                default:
-                    return false;
-            }
+            if (estadoBuscado.equals("pendiente")) return estado.equals("pendiente") || estado.equals("por hacer");
+            if (estadoBuscado.equals("en_progreso")) return estado.equals("en_progreso") || estado.equals("en curso");
+            if (estadoBuscado.equals("completada")) return estado.equals("completada") || estado.equals("listo");
+            return false;
         }).collect(Collectors.toList());
     }
 
@@ -151,26 +123,17 @@ public class WebController {
         try {
             Object fechaObj = tarea.get("fecha_limite");
             String fechaStr = "";
-            
             if (fechaObj != null) {
                 if (fechaObj instanceof String) {
                     String s = (String) fechaObj;
-                    // Intenta cortar formato ISO
-                    if (s.length() >= 10) {
-                        fechaStr = s.substring(8, 10) + "-" + s.substring(5, 7) + "-" + s.substring(0, 4);
-                    } else {
-                        fechaStr = s;
-                    }
+                    fechaStr = s.length() >= 10 ? s.substring(8, 10) + "-" + s.substring(5, 7) + "-" + s.substring(0, 4) : s;
                 } else if (fechaObj instanceof Number) {
-                    // Si es timestamp
                     long ts = ((Number) fechaObj).longValue();
                     fechaStr = new SimpleDateFormat("dd-MM-yyyy").format(new Date(ts));
                 }
             }
-            
             tarea.put("fecha_formateada", fechaStr);
         } catch (Exception e) {
-            System.err.println("⚠️ Error formateando fecha: " + e.getMessage());
             tarea.put("fecha_formateada", "");
         }
     }
