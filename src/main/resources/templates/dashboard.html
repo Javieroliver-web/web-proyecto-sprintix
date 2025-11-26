@@ -100,26 +100,26 @@
     </div>
 
     <script th:inline="javascript">
-        // ⭐ CORRECCIÓN: Usar .get() para acceder a Map en Thymeleaf
+        // Variables globales para JS
         const JWT_TOKEN = /*[[${token}]]*/ '';
         const CURRENT_USER_ID = /*[[${userId}]]*/ 0;
         const API_BASE_URL = 'http://localhost:8080/api';
         
-        // ⭐ DEBUGGING: Verificar que las variables se cargaron
-        console.log('🔧 Variables globales cargadas (Dashboard):');
-        console.log('   - User ID:', CURRENT_USER_ID);
-        console.log('   - Token:', JWT_TOKEN ? `${JWT_TOKEN.substring(0, 20)}...` : 'Ausente');
-        console.log('   - API URL:', API_BASE_URL);
-        
-        // ⭐ VALIDACIÓN: Alertar si algo falta
-        if (!CURRENT_USER_ID || CURRENT_USER_ID === 0) {
-            console.error('❌ CURRENT_USER_ID no está definido correctamente');
-        }
-        if (!JWT_TOKEN || JWT_TOKEN === '') {
-            console.error('❌ JWT_TOKEN no está definido correctamente');
-        }
+        // Exponerlas a window para que notifications.js las vea
+        window.JWT_TOKEN = JWT_TOKEN;
+        window.CURRENT_USER_ID = CURRENT_USER_ID;
+        window.API_BASE_URL = API_BASE_URL;
     </script>
     
     <script src="/js/notifications.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof initNotifications === 'function') {
+                console.log('🔔 Inicializando notificaciones en Dashboard...');
+                initNotifications();
+            }
+        });
+    </script>
 </body>
 </html>

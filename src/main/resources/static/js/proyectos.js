@@ -1,26 +1,42 @@
-// proyectos.js - Gestión de proyectos
+// src/main/resources/static/js/proyectos.js
 
 const modal = document.getElementById('createProjectModal');
 const form = document.getElementById('createProjectForm');
 const btnCrear = document.getElementById('btnCrearProyecto');
 
-// Abrir modal
+// --- 1. FUNCIÓN PARA ENVIAR NOTIFICACIONES ---
+async function sendNotification(mensaje, tipo = 'info') {
+    const userId = window.CURRENT_USER_ID;
+    if (!userId) return;
+    try {
+        await window.authFetch('/notificaciones', {
+            method: 'POST',
+            body: JSON.stringify({ 
+                mensaje: mensaje, 
+                tipo: tipo, 
+                usuario_id: userId 
+            })
+        });
+    } catch (e) { 
+        console.error("Error enviando notificación:", e); 
+    }
+}
+
+// --- 2. LÓGICA DEL MODAL ---
 window.openProjectModal = function() {
     if(modal) {
         modal.classList.add('show');
-        
         const nombreInput = document.getElementById('p-nombre');
         if(nombreInput) nombreInput.focus();
         
+        // Poner fecha de hoy por defecto
         const inicioInput = document.getElementById('p-inicio');
         if(inicioInput && !inicioInput.value) {
-            const hoy = new Date().toISOString().split('T')[0];
-            inicioInput.value = hoy;
+            inicioInput.value = new Date().toISOString().split('T')[0];
         }
     }
 }
 
-// Cerrar modal
 window.closeProjectModal = function() {
     if(modal) {
         modal.classList.remove('show');
@@ -28,55 +44,25 @@ window.closeProjectModal = function() {
     }
 }
 
-// Cerrar al hacer clic fuera del modal
 window.onclick = function(event) {
-    if (event.target == modal) {
-        closeProjectModal();
-    }
+    if (event.target == modal) closeProjectModal();
 }
 
-// Validar fechas
-function validarFechas() {
-    const fechaInicio = document.getElementById('p-inicio').value;
-    const fechaFin = document.getElementById('p-fin').value;
-    
-    if (fechaFin && fechaInicio && fechaFin < fechaInicio) {
-        alert('⚠️ La fecha de fin no puede ser anterior a la fecha de inicio');
-        return false;
-    }
-    return true;
-}
-
-// Deshabilitar botón mientras se procesa
-function setLoading(loading) {
-    if (btnCrear) {
-        btnCrear.disabled = loading;
-        btnCrear.textContent = loading ? 'Creando...' : 'Crear Proyecto';
-    }
-}
-
-// Manejar envío del formulario
+// --- 3. CREAR PROYECTO (Con notificación) ---
 if (form) {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        if (!validarFechas()) return;
         
         const nombre = document.getElementById('p-nombre').value.trim();
         const descripcion = document.getElementById('p-desc').value.trim();
         const fechaInicio = document.getElementById('p-inicio').value;
         const fechaFin = document.getElementById('p-fin').value;
         
-        if (!nombre) {
-            alert('⚠️ El nombre del proyecto es obligatorio');
+        if (!nombre || !fechaInicio) {
+            alert('⚠️ El nombre y la fecha de inicio son obligatorios');
             return;
         }
-        
-        if (!fechaInicio) {
-            alert('⚠️ La fecha de inicio es obligatoria');
-            return;
-        }
-        
+
         const newProject = {
             nombre: nombre,
             descripcion: descripcion || '',
@@ -85,49 +71,46 @@ if (form) {
             estado: 'Activo'
         };
         
-        console.log('📤 Enviando proyecto:', newProject);
-        setLoading(true);
-        
         try {
-            if (typeof authFetch === 'undefined') {
-                throw new Error('La función authFetch no está definida');
-            }
-            
-            const response = await authFetch('/proyectos', {
+            const response = await window.authFetch('/proyectos', {
                 method: 'POST',
                 body: JSON.stringify(newProject)
             });
             
-            console.log('📥 Respuesta recibida:', response.status);
-            
             if (response.ok) {
-                const data = await response.json();
-                console.log('✅ Proyecto creado:', data);
+                // ENVIAR NOTIFICACIÓN ANTES DE RECARGAR
+                await sendNotification(`Nuevo proyecto creado: ${nombre}`, 'exito');
                 
                 closeProjectModal();
-                alert('✅ Proyecto creado exitosamente');
                 window.location.reload();
             } else {
-                let errorMessage = 'No se pudo crear el proyecto';
-                try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.message || errorMessage;
-                    console.error('❌ Error del servidor:', errorData);
-                } catch (e) {
-                    console.error('❌ Error sin detalles:', response.statusText);
-                }
-                
-                alert('❌ Error: ' + errorMessage);
+                alert('❌ Error al crear el proyecto');
             }
         } catch (error) {
-            console.error('❌ Error de conexión:', error);
-            alert('❌ Error de conexión: ' + error.message);
-        } finally {
-            setLoading(false);
+            console.error(error);
+            alert('❌ Error de conexión');
         }
     });
 }
 
-console.log('✅ proyectos.js cargado');
-console.log('🔑 Token disponible:', typeof JWT_TOKEN !== 'undefined' && JWT_TOKEN ? 'Sí' : 'No');
-console.log('🌐 API URL:', typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'No definida');
+// --- 4. ELIMINAR PROYECTO (Con notificación) ---
+window.deleteProject = async function(event, projectId) {
+    event.stopPropagation(); // Evita entrar al tablero al hacer clic en borrar
+    
+    if(!confirm('¿Estás seguro de eliminar este proyecto? Se borrarán todas sus tareas.')) return;
+    
+    try {
+        const res = await window.authFetch('/proyectos/' + projectId, { method: 'DELETE' });
+        
+        if(res.ok) {
+            // ENVIAR NOTIFICACIÓN
+            await sendNotification(`Proyecto eliminado`, 'alerta');
+            window.location.reload();
+        } else {
+            alert("❌ No se pudo eliminar el proyecto.");
+        }
+    } catch(e) { 
+        console.error(e); 
+        alert("❌ Error de conexión al eliminar.");
+    }
+}

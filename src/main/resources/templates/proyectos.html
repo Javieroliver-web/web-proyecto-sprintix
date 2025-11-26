@@ -101,24 +101,32 @@
     </div>
     
     <script th:inline="javascript">
-        const JWT_TOKEN = /*[[${session.token}]]*/ '';
-        const CURRENT_USER_ID = /*[[${usuario.get('id')}]]*/ 0; 
-        const API_BASE_URL = 'http://localhost:8080/api';
-        async function authFetch(endpoint, options = {}) {
-            const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${JWT_TOKEN}`, ...options.headers };
-            return fetch(API_BASE_URL + endpoint, { ...options, headers });
-        }
-        async function deleteProject(event, projectId) {
-            event.stopPropagation(); 
-            if(!confirm('¿Eliminar proyecto?')) return;
-            try {
-                const res = await authFetch('/proyectos/' + projectId, { method: 'DELETE' });
-                if(res.ok) window.location.reload();
-            } catch(e) { console.error(e); }
-        }
+        /*<![CDATA[*/
+        // Definimos variables en window para que sean accesibles globalmente
+        window.JWT_TOKEN = /*[[${token}]]*/ '';
+        window.CURRENT_USER_ID = /*[[${userId}]]*/ 0;
+        window.API_BASE_URL = 'http://localhost:8080/api';
+
+        // Función de fetch autenticado disponible para todos los scripts
+        window.authFetch = async function(endpoint, options = {}) {
+            const headers = { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${window.JWT_TOKEN}`, 
+                ...options.headers 
+            };
+            return fetch(window.API_BASE_URL + endpoint, { ...options, headers });
+        };
+        /*]]>*/
     </script>
-    <script src="/js/proyectos.js"></script>
-    <script src="/js/notifications.js"></script>
-    <script>document.addEventListener('DOMContentLoaded', () => { if(typeof initNotifications === 'function') initNotifications(); });</script>
+
+    <script src="/js/proyectos.js"></script> <script src="/js/notifications.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof initNotifications === 'function') {
+                initNotifications();
+            }
+        });
+    </script>
 </body>
 </html>
