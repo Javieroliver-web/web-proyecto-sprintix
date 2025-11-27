@@ -8,7 +8,7 @@ async function initNotifications() {
     // 1. Crear el elemento HTML del Toast si no existe
     createToastElement();
 
-    // 2. Verificar si hay un mensaje pendiente de una recarga anterior (ej: Proyecto Creado)
+    // 2. Verificar si hay un mensaje pendiente de una recarga anterior
     checkPendingToast();
 
     // 3. Cargar notificaciones iniciales
@@ -47,7 +47,7 @@ function showToast(mensaje, tipo = 'info') {
     // Configurar estilo e icono
     toast.className = `toast-popup show ${tipo}`;
     if (tipo === 'exito') iconEl.innerText = '✅';
-    else if (tipo === 'alerta') iconEl.innerText = '🗑️'; // O ⚠️
+    else if (tipo === 'alerta') iconEl.innerText = '🗑️';
     else iconEl.innerText = '🔵';
 
     // Ocultar a los 3 segundos
@@ -61,10 +61,7 @@ function checkPendingToast() {
     const pendingType = sessionStorage.getItem('TOAST_TYPE');
     
     if (pendingMsg) {
-        // Pequeño delay para asegurar que el usuario ve la animación al cargar
         setTimeout(() => showToast(pendingMsg, pendingType || 'info'), 500);
-        
-        // Limpiar para que no salga siempre
         sessionStorage.removeItem('TOAST_MSG');
         sessionStorage.removeItem('TOAST_TYPE');
     }
@@ -91,7 +88,6 @@ async function loadNotifications() {
             if (!firstLoad) {
                 notificaciones.forEach(n => {
                     if (!knownNotifIds.has(n.id)) {
-                        // ¡Nueva notificación detectada en segundo plano!
                         showToast(n.mensaje, n.tipo);
                     }
                 });
@@ -121,7 +117,7 @@ function renderNotifications(lista) {
     lista.forEach(notif => {
         const item = document.createElement('div');
         item.className = 'notif-item';
-        // ... (resto del renderizado igual que antes) ...
+        
         let icon = '🔵';
         if (notif.tipo === 'alerta') icon = '🔴';
         if (notif.tipo === 'exito') icon = '🟢';
@@ -148,14 +144,13 @@ function updateBadge(count) {
     }
 }
 
-// ... Funciones markAsRead, markAllAsRead, toggleNotifModal se mantienen igual ...
-// (Asegúrate de copiar las funciones existentes toggleNotifModal, markAsRead, etc. del archivo anterior o pedirme que las incluya si las necesitas)
 function toggleNotifModal() {
     const dropdown = document.getElementById('notif-dropdown');
     if(!dropdown) return;
     isDropdownOpen = !isDropdownOpen;
     dropdown.classList.toggle('show', isDropdownOpen);
 }
+
 // Cierre al hacer click fuera
 window.addEventListener('click', (e) => {
     const dropdown = document.getElementById('notif-dropdown');
@@ -175,7 +170,6 @@ async function markAsRead(id, event) {
 }
 
 async function markAllAsRead() {
-    if(!confirm('¿Marcar todo como leído?')) return;
     await fetch(`${window.API_BASE_URL}/notificaciones/usuario/${window.CURRENT_USER_ID}/leer-todas`, {
         method: 'PUT', headers: {'Authorization': `Bearer ${window.JWT_TOKEN}`}
     });
