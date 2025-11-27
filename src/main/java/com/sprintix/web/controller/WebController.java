@@ -52,13 +52,37 @@ public class WebController {
         
         String token = (String) session.getAttribute("token");
         Map usuario = (Map) session.getAttribute("usuario");
-        // Casteo seguro para evitar errores si el ID viene como Long o Integer
         int userId = ((Number) usuario.get("id")).intValue();
         
         model.addAttribute("usuario", usuario);
         model.addAttribute("userId", userId);
         model.addAttribute("token", token);
-        model.addAttribute("stats", apiService.getDashboard(userId, token));
+        
+        // Obtener datos crudos de la API
+        Map<String, Object> stats = apiService.getDashboard(userId, token);
+        
+        // --- FORMATEO DE FECHAS (dd-MM-yyyy) ---
+        if (stats != null) {
+            // 1. Formatear Proyectos Recientes
+            List<Map<String, Object>> proyectos = (List<Map<String, Object>>) stats.get("ultimosProyectos");
+            if (proyectos != null) {
+                for (Map<String, Object> p : proyectos) {
+                    // Sobrescribimos 'fecha_inicio' para que el HTML la muestre formateada
+                    formatMapDate(p, "fecha_inicio", "fecha_inicio");
+                }
+            }
+            
+            // 2. Formatear Próximas Tareas
+            List<Map<String, Object>> tareas = (List<Map<String, Object>>) stats.get("tareasProximas");
+            if (tareas != null) {
+                for (Map<String, Object> t : tareas) {
+                    // Guardamos en 'fecha_formateada' para usarlo en el HTML
+                    formatMapDate(t, "fecha_limite", "fecha_formateada");
+                }
+            }
+        }
+        
+        model.addAttribute("stats", stats);
         
         return "dashboard";
     }
@@ -103,7 +127,8 @@ public class WebController {
         if (tareas != null) {
             for (Map<String, Object> t : tareas) {
                 limpiarDatosTarea(t); 
-                formatDateSafe(t); // Formateo robusto de fecha
+                // Usamos el mismo helper genérico
+                formatMapDate(t, "fecha_limite", "fecha_formateada");
             }
             
             model.addAttribute("tareasPendientes", filtrarPorEstado(tareas, "pendiente"));
@@ -115,6 +140,33 @@ public class WebController {
     }
 
     // --- HELPERS ---
+
+    // Método helper unificado para formatear fechas en Mapas
+    private void formatMapDate(Map<String, Object> map, String inputKey, String outputKey) {
+        try {
+            Object fechaObj = map.get(inputKey);
+            String fechaStr = "";
+            
+            if (fechaObj != null) {
+                if (fechaObj instanceof String) {
+                    String s = (String) fechaObj;
+                    // Si viene como ISO (yyyy-MM-dd...), lo transformamos
+                    if (s.length() >= 10) {
+                        fechaStr = s.substring(8, 10) + "-" + s.substring(5, 7) + "-" + s.substring(0, 4);
+                    } else {
+                        fechaStr = s;
+                    }
+                } else if (fechaObj instanceof Number) {
+                    // Si viene como timestamp
+                    long ts = ((Number) fechaObj).longValue();
+                    fechaStr = new SimpleDateFormat("dd-MM-yyyy").format(new Date(ts));
+                }
+            }
+            map.put(outputKey, fechaStr);
+        } catch (Exception e) {
+            map.put(outputKey, "");
+        }
+    }
     
     private void limpiarDatosTarea(Map<String, Object> t) {
         if (!t.containsKey("titulo") || t.get("titulo") == null) t.put("titulo", "Sin título");
@@ -132,30 +184,6 @@ public class WebController {
             if (estadoBuscado.equals("completada")) return estado.equals("completada") || estado.equals("listo");
             return false;
         }).collect(Collectors.toList());
-    }
-
-    private void formatDateSafe(Map<String, Object> tarea) {
-        try {
-            Object fechaObj = tarea.get("fecha_limite");
-            String fechaStr = "";
-            if (fechaObj != null) {
-                if (fechaObj instanceof String) {
-                    String s = (String) fechaObj;
-                    // Si viene formato ISO completo (2025-11-20T00:00:00...), cortamos
-                    if (s.length() >= 10) {
-                        fechaStr = s.substring(8, 10) + "-" + s.substring(5, 7) + "-" + s.substring(0, 4);
-                    } else {
-                        fechaStr = s;
-                    }
-                } else if (fechaObj instanceof Number) {
-                    long ts = ((Number) fechaObj).longValue();
-                    fechaStr = new SimpleDateFormat("dd-MM-yyyy").format(new Date(ts));
-                }
-            }
-            tarea.put("fecha_formateada", fechaStr);
-        } catch (Exception e) {
-            tarea.put("fecha_formateada", "");
-        }
     }
 
     private boolean isValidSession(HttpSession session) {
