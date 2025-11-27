@@ -35,6 +35,7 @@ function drag(ev) {
     ev.dataTransfer.effectAllowed = "move";
     ev.target.classList.add('dragging');
 }
+
 window.allowDrop = (e) => { e.preventDefault(); }
 
 window.dropTask = async (e, nuevoEstado) => {
@@ -47,6 +48,9 @@ window.dropTask = async (e, nuevoEstado) => {
     
     card.classList.remove('dragging');
     document.getElementById(`col-${nuevoEstado}`).appendChild(card);
+
+    // Actualizar el atributo data-status
+    card.setAttribute('data-status', capitalizeEstado(nuevoEstado));
 
     checkEmptyState(origen);
     checkEmptyState(nuevoEstado);
@@ -67,7 +71,7 @@ window.dropTask = async (e, nuevoEstado) => {
     } catch (error) { window.location.reload(); }
 };
 
-// --- MODAL DE DETALLES Y ELIMINACIÓN (NUEVO) ---
+// --- MODAL DE DETALLES Y ELIMINACIÓN ---
 window.openViewTaskModal = function(card) {
     const modal = document.getElementById('viewTaskModal');
     const btnDelete = document.getElementById('btn-delete-modal');
@@ -102,35 +106,122 @@ window.openTaskModal = function(estadoDefault) {
         setTimeout(() => document.getElementById('t-titulo').focus(), 100);
     }
 }
+
 window.closeTaskModal = function() {
     if (modal) { modal.classList.remove('show'); if (form) form.reset(); }
 }
+
 window.onclick = function(event) { 
     if (event.target == modal) closeTaskModal();
     if (event.target == document.getElementById('viewTaskModal')) closeViewModal();
 }
 
+// ✅ NUEVO: Helper para capitalizar estado
+function capitalizeEstado(estado) {
+    if (estado === 'en_progreso') return 'En Curso';
+    if (estado === 'completada') return 'Completada';
+    if (estado === 'pendiente') return 'Pendiente';
+    return estado;
+}
+
+// ✅ NUEVO: Función para agregar tarea al DOM dinámicamente
+function agregarTareaAlDOM(tarea) {
+    console.log('📝 Agregando tarea al DOM:', tarea);
+    
+    const columna = document.getElementById(`col-${tarea.estado}`);
+    if (!columna) {
+        console.error('❌ Columna no encontrada:', tarea.estado);
+        return;
+    }
+    
+    // Formatear fecha si existe
+    let fechaTexto = '';
+    if (tarea.fecha_limite) {
+        const fecha = new Date(tarea.fecha_limite);
+        fechaTexto = `${fecha.getDate().toString().padStart(2, '0')}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getFullYear()}`;
+    }
+    
+    // Crear elemento HTML
+    const card = document.createElement('div');
+    card.className = 'task-card';
+    card.id = `task-${tarea.id}`;
+    card.draggable = true;
+    card.setAttribute('data-id', tarea.id);
+    card.setAttribute('data-title', tarea.titulo);
+    card.setAttribute('data-desc', tarea.descripcion || '');
+    card.setAttribute('data-date', fechaTexto);
+    card.setAttribute('data-status', capitalizeEstado(tarea.estado));
+    card.ondragstart = drag;
+    card.onclick = function() { openViewTaskModal(this); };
+    
+    card.innerHTML = `
+        <h4>${tarea.titulo}</h4>
+        <p>${tarea.descripcion || ''}</p>
+        ${fechaTexto ? `<small>📅 ${fechaTexto}</small>` : ''}
+    `;
+    
+    columna.appendChild(card);
+    checkEmptyState(tarea.estado);
+    
+    console.log('✅ Tarea agregada correctamente al DOM');
+}
+
+// ✅ ACTUALIZADO: Form submit con actualización dinámica del DOM (SIN RECARGAR)
 if (form) {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        console.log('🚀 [FRONTEND] Iniciando creación de tarea...');
+        
         const titulo = document.getElementById('t-titulo').value;
         const desc = document.getElementById('t-desc').value;
         const estado = document.getElementById('t-estado').value;
         const fecha = document.getElementById('t-fecha').value;
 
-        const newTask = { titulo: titulo, descripcion: desc, estado: estado, fecha_limite: fecha || null, proyecto_id: parseInt(projectId) };
+        const newTask = { 
+            titulo: titulo, 
+            descripcion: desc, 
+            estado: estado, 
+            fecha_limite: fecha || null, 
+            proyecto_id: parseInt(projectId) 
+        };
+
+        console.log('📤 [FRONTEND] Datos a enviar:', newTask);
 
         try {
-            const res = await authFetch('/tareas', { method: 'POST', body: JSON.stringify(newTask) });
+            const res = await authFetch('/tareas', { 
+                method: 'POST', 
+                body: JSON.stringify(newTask) 
+            });
+            
             if (res && res.ok) {
+                // ✅ OBTENER LA TAREA CREADA CON SU ID
+                const tareaCreada = await res.json();
+                console.log('✅ [FRONTEND] Tarea creada en backend:', tareaCreada);
+                
+                // ✅ AGREGAR AL DOM SIN RECARGAR PÁGINA
+                agregarTareaAlDOM(tareaCreada);
+                
+                // Enviar notificación
                 await sendNotification(`Nueva tarea creada: ${titulo}`, 'info');
+                
+                // Cerrar modal y limpiar formulario
                 closeTaskModal();
-                window.location.reload(); 
-            } else { alert('Error al crear tarea'); }
-        } catch (error) { alert('Error de conexión.'); }
+                form.reset();
+                
+                console.log('🎉 [FRONTEND] Proceso completado exitosamente');
+            } else { 
+                console.error('❌ [FRONTEND] Error en respuesta del servidor');
+                alert('Error al crear tarea'); 
+            }
+        } catch (error) { 
+            console.error('❌ [FRONTEND] Error de conexión:', error);
+            alert('Error de conexión.'); 
+        }
     });
 }
 
+// Función eliminar tarea
 window.deleteTask = async function(event, taskId) {
     event.stopPropagation(); 
     if (!confirm('¿Estás seguro de que quieres eliminar esta tarea?')) return;
@@ -144,7 +235,7 @@ window.deleteTask = async function(event, taskId) {
             card.remove();
             checkEmptyState(colId);
             
-            closeViewModal(); // Cerrar el modal de detalles si estaba abierto
+            closeViewModal();
             sendNotification(`Tarea eliminada`, 'alerta');
         }
     } catch (error) { console.error(error); }
