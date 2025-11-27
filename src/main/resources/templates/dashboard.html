@@ -89,7 +89,6 @@
                 <div class="tabs-header"><button class="tab-link active">Próximas Tareas</button></div>
                 <div class="task-list">
                     <div class="task-row" th:each="t : ${stats.tareasProximas}">
-                        <input type="checkbox" class="task-check" disabled>
                         <span class="task-title" th:text="${t.titulo}">Tarea</span>
                         <div class="task-meta"><span class="badge" th:text="${t.estado}">Estado</span></div>
                     </div>
