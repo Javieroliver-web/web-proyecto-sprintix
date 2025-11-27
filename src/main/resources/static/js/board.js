@@ -49,7 +49,8 @@ window.dropTask = async (e, nuevoEstado) => {
     card.classList.remove('dragging');
     document.getElementById(`col-${nuevoEstado}`).appendChild(card);
 
-    // Actualizar el atributo data-status
+    // Actualizar atributos
+    card.setAttribute('data-status-key', nuevoEstado);
     card.setAttribute('data-status', capitalizeEstado(nuevoEstado));
 
     checkEmptyState(origen);
@@ -61,8 +62,7 @@ window.dropTask = async (e, nuevoEstado) => {
             body: JSON.stringify({ estado: nuevoEstado })
         });
         if (res.ok) {
-            let estadoTexto = nuevoEstado === 'en_progreso' ? 'En Curso' : 
-                              nuevoEstado === 'completada' ? 'Completada' : 'Pendiente';
+            let estadoTexto = capitalizeEstado(nuevoEstado);
             let tipo = nuevoEstado === 'completada' ? 'exito' : 'info';
             sendNotification(`Tarea movida a: ${estadoTexto}`, tipo);
         } else { 
@@ -71,10 +71,11 @@ window.dropTask = async (e, nuevoEstado) => {
     } catch (error) { window.location.reload(); }
 };
 
-// --- MODAL DE DETALLES Y ELIMINACIÓN ---
+// --- MODAL DE DETALLES, EDICIÓN Y ELIMINACIÓN ---
 window.openViewTaskModal = function(card) {
     const modal = document.getElementById('viewTaskModal');
     const btnDelete = document.getElementById('btn-delete-modal');
+    const btnEdit = document.getElementById('btn-edit-modal');
     
     // Rellenar datos desde los atributos data-*
     document.getElementById('view-title').innerText = card.dataset.title;
@@ -82,11 +83,13 @@ window.openViewTaskModal = function(card) {
     document.getElementById('view-date').innerText = card.dataset.date || 'Sin fecha';
     document.getElementById('view-status').innerText = card.dataset.status;
 
-    // Configurar botón eliminar
     const taskId = card.dataset.id;
-    btnDelete.onclick = function(e) {
-        deleteTask(e, taskId);
-    };
+
+    // Configurar botón eliminar
+    btnDelete.onclick = function(e) { deleteTask(e, taskId); };
+
+    // Configurar botón editar
+    btnEdit.onclick = function() { openEditTaskModal(card); };
 
     modal.classList.add('show');
 }
@@ -95,28 +98,76 @@ window.closeViewModal = function() {
     document.getElementById('viewTaskModal').classList.remove('show');
 }
 
-// --- Modal Crear ---
-const modal = document.getElementById('createTaskModal');
+// --- LÓGICA DE EDICIÓN ---
+window.openEditTaskModal = function(card) {
+    // Cerrar modal de vista
+    closeViewModal();
+
+    const taskId = card.dataset.id;
+    const titulo = card.dataset.title;
+    const desc = card.dataset.desc;
+    const estadoKey = card.dataset.statusKey || 'pendiente';
+    const dateIso = card.dataset.dateIso; // Formato yyyy-MM-dd o timestamp
+
+    // Rellenar formulario de creación (reutilizado)
+    document.getElementById('modal-title').innerText = "✏️ Editar Tarea";
+    document.getElementById('btn-save-task').innerText = "Guardar Cambios";
+    
+    document.getElementById('t-id').value = taskId; // ID presente = Modo Edición
+    document.getElementById('t-titulo').value = titulo;
+    document.getElementById('t-desc').value = desc || '';
+    document.getElementById('t-estado').value = estadoKey;
+    
+    // Formatear fecha para input date (yyyy-MM-dd)
+    if (dateIso) {
+        let dateVal = dateIso;
+        // Si es timestamp numérico o string largo ISO
+        if (!isNaN(dateIso)) {
+            dateVal = new Date(parseInt(dateIso)).toISOString().split('T')[0];
+        } else if (dateIso.length > 10) {
+            dateVal = dateIso.substring(0, 10);
+        }
+        document.getElementById('t-fecha').value = dateVal;
+    } else {
+        document.getElementById('t-fecha').value = '';
+    }
+
+    // Abrir modal
+    const modal = document.getElementById('createTaskModal');
+    modal.classList.add('show');
+}
+
+// --- Modal Crear/Editar ---
+const modalCreate = document.getElementById('createTaskModal');
 const form = document.getElementById('createTaskForm');
 
 window.openTaskModal = function(estadoDefault) {
-    if (modal) {
+    if (modalCreate) {
+        // Resetear formulario para modo CREACIÓN
+        form.reset();
+        document.getElementById('t-id').value = ''; // Sin ID = Crear
+        document.getElementById('modal-title').innerText = "✨ Nueva Tarea";
+        document.getElementById('btn-save-task').innerText = "Guardar";
+        
         document.getElementById('t-estado').value = estadoDefault;
-        modal.classList.add('show');
+        modalCreate.classList.add('show');
         setTimeout(() => document.getElementById('t-titulo').focus(), 100);
     }
 }
 
 window.closeTaskModal = function() {
-    if (modal) { modal.classList.remove('show'); if (form) form.reset(); }
+    if (modalCreate) { 
+        modalCreate.classList.remove('show'); 
+        form.reset(); 
+        document.getElementById('t-id').value = ''; 
+    }
 }
 
 window.onclick = function(event) { 
-    if (event.target == modal) closeTaskModal();
+    if (event.target == modalCreate) closeTaskModal();
     if (event.target == document.getElementById('viewTaskModal')) closeViewModal();
 }
 
-// ✅ NUEVO: Helper para capitalizar estado
 function capitalizeEstado(estado) {
     if (estado === 'en_progreso') return 'En Curso';
     if (estado === 'completada') return 'Completada';
@@ -124,98 +175,105 @@ function capitalizeEstado(estado) {
     return estado;
 }
 
-// ✅ NUEVO: Función para agregar tarea al DOM dinámicamente
-function agregarTareaAlDOM(tarea) {
-    console.log('📝 Agregando tarea al DOM:', tarea);
-    
-    const columna = document.getElementById(`col-${tarea.estado}`);
-    if (!columna) {
-        console.error('❌ Columna no encontrada:', tarea.estado);
-        return;
+// --- AGREGAR O ACTUALIZAR DOM ---
+function updateOrAddTaskToDOM(tarea) {
+    let card = document.getElementById(`task-${tarea.id}`);
+    const isNew = !card;
+
+    if (isNew) {
+        card = document.createElement('div');
+        card.className = 'task-card';
+        card.id = `task-${tarea.id}`;
+        card.draggable = true;
+        card.ondragstart = drag;
+        card.onclick = function() { openViewTaskModal(this); };
+        // Si es nueva, la añadimos a la columna correspondiente
+        const col = document.getElementById(`col-${tarea.estado}`);
+        if(col) col.appendChild(card);
+    } else {
+        // Si existe, verificamos si cambió de columna
+        const currentStatusKey = card.getAttribute('data-status-key');
+        if (currentStatusKey !== tarea.estado) {
+            const newCol = document.getElementById(`col-${tarea.estado}`);
+            if(newCol) newCol.appendChild(card);
+            checkEmptyState(currentStatusKey); // Verificar antigua columna
+        }
     }
-    
-    // Formatear fecha si existe
+
+    // Formatear fecha
     let fechaTexto = '';
+    let fechaIso = '';
     if (tarea.fecha_limite) {
         const fecha = new Date(tarea.fecha_limite);
+        fechaIso = fecha.toISOString().split('T')[0];
         fechaTexto = `${fecha.getDate().toString().padStart(2, '0')}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getFullYear()}`;
     }
-    
-    // Crear elemento HTML
-    const card = document.createElement('div');
-    card.className = 'task-card';
-    card.id = `task-${tarea.id}`;
-    card.draggable = true;
+
+    // Actualizar atributos
     card.setAttribute('data-id', tarea.id);
     card.setAttribute('data-title', tarea.titulo);
     card.setAttribute('data-desc', tarea.descripcion || '');
     card.setAttribute('data-date', fechaTexto);
+    card.setAttribute('data-date-iso', fechaIso);
     card.setAttribute('data-status', capitalizeEstado(tarea.estado));
-    card.ondragstart = drag;
-    card.onclick = function() { openViewTaskModal(this); };
-    
+    card.setAttribute('data-status-key', tarea.estado);
+
+    if (tarea.estado === 'completada') card.classList.add('completed');
+    else card.classList.remove('completed');
+
+    // Actualizar contenido visual
     card.innerHTML = `
         <h4>${tarea.titulo}</h4>
         <p>${tarea.descripcion || ''}</p>
         ${fechaTexto ? `<small>📅 ${fechaTexto}</small>` : ''}
     `;
-    
-    columna.appendChild(card);
+
     checkEmptyState(tarea.estado);
-    
-    console.log('✅ Tarea agregada correctamente al DOM');
 }
 
-// ✅ ACTUALIZADO: Form submit con actualización dinámica del DOM (SIN RECARGAR)
+// --- SUBMIT FORMULARIO (CREAR O EDITAR) ---
 if (form) {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        console.log('🚀 [FRONTEND] Iniciando creación de tarea...');
-        
+        const id = document.getElementById('t-id').value;
         const titulo = document.getElementById('t-titulo').value;
         const desc = document.getElementById('t-desc').value;
         const estado = document.getElementById('t-estado').value;
         const fecha = document.getElementById('t-fecha').value;
+        const isEdit = !!id;
 
-        const newTask = { 
+        const taskData = { 
             titulo: titulo, 
             descripcion: desc, 
             estado: estado, 
             fecha_limite: fecha || null, 
-            proyecto_id: parseInt(projectId) 
+            proyecto_id: parseInt(window.projectId) 
         };
 
-        console.log('📤 [FRONTEND] Datos a enviar:', newTask);
+        const url = isEdit ? `/tareas/${id}` : '/tareas';
+        const method = isEdit ? 'PUT' : 'POST';
 
         try {
-            const res = await authFetch('/tareas', { 
-                method: 'POST', 
-                body: JSON.stringify(newTask) 
+            const res = await authFetch(url, { 
+                method: method, 
+                body: JSON.stringify(taskData) 
             });
             
             if (res && res.ok) {
-                // ✅ OBTENER LA TAREA CREADA CON SU ID
-                const tareaCreada = await res.json();
-                console.log('✅ [FRONTEND] Tarea creada en backend:', tareaCreada);
+                const tareaRes = await res.json();
                 
-                // ✅ AGREGAR AL DOM SIN RECARGAR PÁGINA
-                agregarTareaAlDOM(tareaCreada);
+                updateOrAddTaskToDOM(tareaRes);
                 
-                // Enviar notificación
-                await sendNotification(`Nueva tarea creada: ${titulo}`, 'info');
+                const msg = isEdit ? `Tarea actualizada: ${titulo}` : `Nueva tarea creada: ${titulo}`;
+                await sendNotification(msg, 'info');
                 
-                // Cerrar modal y limpiar formulario
                 closeTaskModal();
-                form.reset();
-                
-                console.log('🎉 [FRONTEND] Proceso completado exitosamente');
             } else { 
-                console.error('❌ [FRONTEND] Error en respuesta del servidor');
-                alert('Error al crear tarea'); 
+                alert('Error al guardar tarea'); 
             }
         } catch (error) { 
-            console.error('❌ [FRONTEND] Error de conexión:', error);
+            console.error(error);
             alert('Error de conexión.'); 
         }
     });
@@ -223,7 +281,7 @@ if (form) {
 
 // Función eliminar tarea
 window.deleteTask = async function(event, taskId) {
-    event.stopPropagation(); 
+    if(event) event.stopPropagation(); 
     if (!confirm('¿Estás seguro de que quieres eliminar esta tarea?')) return;
     
     try {

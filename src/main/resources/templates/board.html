@@ -74,7 +74,7 @@
                             <div class="empty-msg" th:if="${#lists.isEmpty(tareasPendientes)}" id="empty-pendiente">No hay tareas</div>
                             <div th:each="t : ${tareasPendientes}" class="task-card" draggable="true" 
                                  th:id="'task-' + ${t.get('id')}" 
-                                 th:attr="data-id=${t.get('id')}, data-title=${t.get('titulo')}, data-desc=${t.get('descripcion')}, data-date=${t.get('fecha_formateada')}, data-status='Pendiente'"
+                                 th:attr="data-id=${t.get('id')}, data-title=${t.get('titulo')}, data-desc=${t.get('descripcion')}, data-date=${t.get('fecha_formateada')}, data-status='Pendiente', data-status-key='pendiente', data-date-iso=${t.get('fecha_limite')}"
                                  ondragstart="drag(event)" onclick="openViewTaskModal(this)">
                                 <h4 th:text="${t.get('titulo')}">Título</h4>
                                 <p th:text="${t.get('descripcion')}">Desc</p>
@@ -89,7 +89,7 @@
                             <div class="empty-msg" th:if="${#lists.isEmpty(tareasEnCurso)}" id="empty-en_progreso">No hay tareas</div>
                             <div th:each="t : ${tareasEnCurso}" class="task-card" draggable="true" 
                                  th:id="'task-' + ${t.get('id')}" 
-                                 th:attr="data-id=${t.get('id')}, data-title=${t.get('titulo')}, data-desc=${t.get('descripcion')}, data-date=${t.get('fecha_formateada')}, data-status='En Curso'"
+                                 th:attr="data-id=${t.get('id')}, data-title=${t.get('titulo')}, data-desc=${t.get('descripcion')}, data-date=${t.get('fecha_formateada')}, data-status='En Curso', data-status-key='en_progreso', data-date-iso=${t.get('fecha_limite')}"
                                  ondragstart="drag(event)" onclick="openViewTaskModal(this)">
                                 <h4 th:text="${t.get('titulo')}">Título</h4>
                                 <p th:text="${t.get('descripcion')}">Desc</p>
@@ -104,7 +104,7 @@
                             <div class="empty-msg" th:if="${#lists.isEmpty(tareasCompletadas)}" id="empty-completada">No hay tareas</div>
                             <div th:each="t : ${tareasCompletadas}" class="task-card completed" draggable="true" 
                                  th:id="'task-' + ${t.get('id')}" 
-                                 th:attr="data-id=${t.get('id')}, data-title=${t.get('titulo')}, data-desc=${t.get('descripcion')}, data-date=${t.get('fecha_formateada')}, data-status='Completada'"
+                                 th:attr="data-id=${t.get('id')}, data-title=${t.get('titulo')}, data-desc=${t.get('descripcion')}, data-date=${t.get('fecha_formateada')}, data-status='Completada', data-status-key='completada', data-date-iso=${t.get('fecha_limite')}"
                                  ondragstart="drag(event)" onclick="openViewTaskModal(this)">
                                 <h4 th:text="${t.get('titulo')}">Título</h4>
                                 <p th:text="${t.get('descripcion')}">Desc</p>
@@ -119,13 +119,18 @@
     
     <div id="createTaskModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header"><h3>✨ Nueva Tarea</h3><button class="close-btn" onclick="closeTaskModal()">×</button></div>
+            <div class="modal-header">
+                <h3 id="modal-title">✨ Nueva Tarea</h3>
+                <button class="close-btn" onclick="closeTaskModal()">×</button>
+            </div>
             <form id="createTaskForm" style="padding-top: 10px;">
+                <input type="hidden" id="t-id">
                 <input type="hidden" id="t-estado">
+                
                 <div class="form-group"><label>Título</label><input type="text" id="t-titulo" class="form-control" required></div>
                 <div class="form-group"><label>Detalles</label><textarea id="t-desc" class="form-control" rows="3"></textarea></div>
                 <div class="form-group"><label>Fecha Límite</label><input type="date" id="t-fecha" class="form-control"></div>
-                <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancelar</button><button type="submit" class="btn btn-primary">Guardar</button></div>
+                <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancelar</button><button type="submit" class="btn btn-primary" id="btn-save-task">Guardar</button></div>
             </form>
         </div>
     </div>
@@ -143,50 +148,27 @@
                     <p id="view-desc" style="white-space: pre-wrap; margin: 0;">Descripción...</p>
                 </div>
             </div>
-            <div class="modal-actions" style="justify-content: space-between;">
-                <div></div> 
-                <button type="button" class="btn btn-secondary" style="background-color: #ff4444; color: white; border: none;" id="btn-delete-modal">Eliminar Tarea</button>
+            <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem;">
+                <button type="button" class="btn btn-secondary" style="background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;" id="btn-delete-modal">Eliminar Tarea</button>
+                <button type="button" class="btn btn-primary" id="btn-edit-modal">✏️ Editar Tarea</button>
             </div>
         </div>
     </div>
 
-    <!-- ⭐⭐⭐ SOLUCIÓN: Definir las variables GLOBALMENTE ANTES de cargar scripts ⭐⭐⭐ -->
     <script th:inline="javascript">
         /*<![CDATA[*/
         var projectId = /*[[${proyecto.get('id')}]]*/ 0;
-        var JWT_TOKEN = '/*[[${token}]]*/' || '';
+        var JWT_TOKEN = /*[[${token}]]*/ '';
         var CURRENT_USER_ID = /*[[${userId}]]*/ 0;
         var API_BASE_URL = 'http://localhost:8080/api';
         
-        // Hacer las variables globales explícitamente
         window.projectId = projectId;
         window.JWT_TOKEN = JWT_TOKEN;
         window.CURRENT_USER_ID = CURRENT_USER_ID;
         window.API_BASE_URL = API_BASE_URL;
         
-        // ⭐ DEBUGGING MEJORADO
-        console.log('🔧 Variables globales inyectadas (Board):');
-        console.log('   - Project ID:', projectId, '(tipo:', typeof projectId, ')');
-        console.log('   - User ID:', CURRENT_USER_ID, '(tipo:', typeof CURRENT_USER_ID, ')');
-        console.log('   - Token:', JWT_TOKEN ? `${JWT_TOKEN.substring(0, 20)}... (${JWT_TOKEN.length} chars)` : '❌ VACÍO');
-        console.log('   - API URL:', API_BASE_URL);
-        
-        // ⭐ VALIDACIÓN CRÍTICA
-        if (!CURRENT_USER_ID || CURRENT_USER_ID === 0) {
-            console.error('❌ CURRENT_USER_ID no está definido. Valor recibido:', CURRENT_USER_ID);
-            console.error('   El backend no está pasando userId correctamente');
-        }
-        if (!JWT_TOKEN || JWT_TOKEN === '') {
-            console.error('❌ JWT_TOKEN no está definido. Valor recibido:', JWT_TOKEN);
-            console.error('   El backend no está pasando token correctamente');
-        }
-        
-        // Función auxiliar para peticiones autenticadas
         async function authFetch(endpoint, options = {}) {
-            if (!JWT_TOKEN) {
-                console.error('❌ No se puede hacer petición: token no disponible');
-                return null;
-            }
+            if (!JWT_TOKEN) return null;
             const headers = { 
                 'Content-Type': 'application/json', 
                 'Authorization': `Bearer ${JWT_TOKEN}`, 
@@ -197,20 +179,11 @@
         /*]]>*/
     </script>
     
-    <!-- Cargar scripts DESPUÉS de definir las variables -->
     <script src="/js/board.js"></script>
     <script src="/js/notifications.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => { 
-            console.log('📄 DOM cargado en board.html');
-            console.log('   - initNotifications disponible:', typeof initNotifications !== 'undefined');
-            
-            if(typeof initNotifications === 'function') {
-                console.log('🚀 Inicializando notificaciones...');
-                initNotifications(); 
-            } else {
-                console.error('❌ initNotifications no está definida');
-            }
+            if(typeof initNotifications === 'function') initNotifications(); 
         });
     </script>
 </body>
