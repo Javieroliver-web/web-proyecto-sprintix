@@ -33,13 +33,6 @@ public class WebController {
             session.setAttribute("token", token);
             Map usuario = apiService.getMe(token);
             session.setAttribute("usuario", usuario);
-            
-            // ⭐ DEBUGGING: Verifica que los datos estén en sesión
-            System.out.println("✅ Login exitoso:");
-            System.out.println("   - Token: " + token.substring(0, 20) + "...");
-            System.out.println("   - Usuario ID: " + usuario.get("id"));
-            System.out.println("   - Usuario Nombre: " + usuario.get("nombre"));
-            
             return "redirect:/dashboard";
         }
         model.addAttribute("error", "Credenciales inválidas");
@@ -59,19 +52,13 @@ public class WebController {
         
         String token = (String) session.getAttribute("token");
         Map usuario = (Map) session.getAttribute("usuario");
-        
-        // ⭐ ASEGURAR QUE LAS VARIABLES SE PASEN CORRECTAMENTE
+        // Casteo seguro para evitar errores si el ID viene como Long o Integer
         int userId = ((Number) usuario.get("id")).intValue();
         
         model.addAttribute("usuario", usuario);
-        model.addAttribute("userId", userId); // ⭐ NUEVO: Pasar explícitamente
-        model.addAttribute("token", token);   // ⭐ NUEVO: Pasar explícitamente
+        model.addAttribute("userId", userId);
+        model.addAttribute("token", token);
         model.addAttribute("stats", apiService.getDashboard(userId, token));
-        
-        // ⭐ DEBUGGING
-        System.out.println("📊 Dashboard cargado:");
-        System.out.println("   - User ID: " + userId);
-        System.out.println("   - Token presente: " + (token != null));
         
         return "dashboard";
     }
@@ -85,8 +72,8 @@ public class WebController {
         int userId = ((Number) usuario.get("id")).intValue();
         
         model.addAttribute("usuario", usuario);
-        model.addAttribute("userId", userId);  // ⭐ NUEVO
-        model.addAttribute("token", token);    // ⭐ NUEVO
+        model.addAttribute("userId", userId);
+        model.addAttribute("token", token);
         model.addAttribute("proyectos", apiService.getProyectos(token));
         
         return "proyectos";
@@ -107,8 +94,8 @@ public class WebController {
         }
 
         model.addAttribute("usuario", usuario);
-        model.addAttribute("userId", userId);  // ⭐ NUEVO
-        model.addAttribute("token", token);    // ⭐ NUEVO
+        model.addAttribute("userId", userId);
+        model.addAttribute("token", token);
         model.addAttribute("proyecto", data.get("proyecto"));
         
         List<Map<String, Object>> tareas = (List<Map<String, Object>>) data.get("tareas");
@@ -116,7 +103,7 @@ public class WebController {
         if (tareas != null) {
             for (Map<String, Object> t : tareas) {
                 limpiarDatosTarea(t); 
-                formatDateSafe(t);
+                formatDateSafe(t); // Formateo robusto de fecha
             }
             
             model.addAttribute("tareasPendientes", filtrarPorEstado(tareas, "pendiente"));
@@ -154,7 +141,12 @@ public class WebController {
             if (fechaObj != null) {
                 if (fechaObj instanceof String) {
                     String s = (String) fechaObj;
-                    fechaStr = s.length() >= 10 ? s.substring(8, 10) + "-" + s.substring(5, 7) + "-" + s.substring(0, 4) : s;
+                    // Si viene formato ISO completo (2025-11-20T00:00:00...), cortamos
+                    if (s.length() >= 10) {
+                        fechaStr = s.substring(8, 10) + "-" + s.substring(5, 7) + "-" + s.substring(0, 4);
+                    } else {
+                        fechaStr = s;
+                    }
                 } else if (fechaObj instanceof Number) {
                     long ts = ((Number) fechaObj).longValue();
                     fechaStr = new SimpleDateFormat("dd-MM-yyyy").format(new Date(ts));
