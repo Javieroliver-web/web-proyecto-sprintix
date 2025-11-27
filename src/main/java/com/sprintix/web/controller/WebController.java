@@ -58,32 +58,24 @@ public class WebController {
         model.addAttribute("userId", userId);
         model.addAttribute("token", token);
         
-        // Obtener datos crudos de la API
         Map<String, Object> stats = apiService.getDashboard(userId, token);
         
-        // --- FORMATEO DE FECHAS (dd-MM-yyyy) ---
         if (stats != null) {
-            // 1. Formatear Proyectos Recientes
             List<Map<String, Object>> proyectos = (List<Map<String, Object>>) stats.get("ultimosProyectos");
             if (proyectos != null) {
                 for (Map<String, Object> p : proyectos) {
-                    // Sobrescribimos 'fecha_inicio' para que el HTML la muestre formateada
                     formatMapDate(p, "fecha_inicio", "fecha_inicio");
                 }
             }
-            
-            // 2. Formatear Próximas Tareas
             List<Map<String, Object>> tareas = (List<Map<String, Object>>) stats.get("tareasProximas");
             if (tareas != null) {
                 for (Map<String, Object> t : tareas) {
-                    // Guardamos en 'fecha_formateada' para usarlo en el HTML
                     formatMapDate(t, "fecha_limite", "fecha_formateada");
                 }
             }
         }
         
         model.addAttribute("stats", stats);
-        
         return "dashboard";
     }
 
@@ -127,7 +119,6 @@ public class WebController {
         if (tareas != null) {
             for (Map<String, Object> t : tareas) {
                 limpiarDatosTarea(t); 
-                // Usamos el mismo helper genérico
                 formatMapDate(t, "fecha_limite", "fecha_formateada");
             }
             
@@ -139,9 +130,12 @@ public class WebController {
         return "board";
     }
 
-    // --- HELPERS ---
+    // --- HELPERS CORREGIDOS ---
 
-    // Método helper unificado para formatear fechas en Mapas
+    /**
+     * Formatea la fecha de manera inteligente.
+     * Detecta si ya viene en formato dd-MM-yyyy para no romperla.
+     */
     private void formatMapDate(Map<String, Object> map, String inputKey, String outputKey) {
         try {
             Object fechaObj = map.get(inputKey);
@@ -150,14 +144,18 @@ public class WebController {
             if (fechaObj != null) {
                 if (fechaObj instanceof String) {
                     String s = (String) fechaObj;
-                    // Si viene como ISO (yyyy-MM-dd...), lo transformamos
-                    if (s.length() >= 10) {
+                    
+                    // CASO 1: Viene como ISO (yyyy-MM-dd...) -> Lo convertimos
+                    // Comprobamos si el 4º caracter es un guion (ej: 2025-...)
+                    if (s.length() >= 10 && s.charAt(4) == '-') {
                         fechaStr = s.substring(8, 10) + "-" + s.substring(5, 7) + "-" + s.substring(0, 4);
-                    } else {
+                    } 
+                    // CASO 2: Ya viene bien (dd-MM-yyyy...) -> Lo dejamos tal cual
+                    else {
                         fechaStr = s;
                     }
                 } else if (fechaObj instanceof Number) {
-                    // Si viene como timestamp
+                    // CASO 3: Timestamp numérico
                     long ts = ((Number) fechaObj).longValue();
                     fechaStr = new SimpleDateFormat("dd-MM-yyyy").format(new Date(ts));
                 }
